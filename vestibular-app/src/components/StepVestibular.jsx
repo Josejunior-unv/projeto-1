@@ -18,7 +18,7 @@ function StepVestibular({ onNext }) {
             <div className="bg-black bg-opacity-60 p-8 rounded-xl text-white">
               <h1 className="text-3xl font-bold mb-4">Bem vindo!</h1>
                <p className="text-gray-300">Seu plano de estudos personalizado para o vestibular.</p>
-               <h3 className="text-10 text-lg mt-4 text-gray-400">Este site tem como propósito ajudar você 
+               <h3 className="text-10 text-lg mt-4 text-gray-400">Este site tem como propósito ajudar você
                   a acompanhar e entender seu desempenho diário e mensal por meio de cronogramas, estatísticas e métricas próprias.
                     Essas informações oferecem um norte claro sobre sua média de acertos e sua evolução ao longo do tempo.</h3>
 
@@ -29,7 +29,7 @@ function StepVestibular({ onNext }) {
 
           <button className="bg-blue-600 text-white px-7 py-2 rounded-lg" onClick={() => setVestibular("ENEM")}>ENEM</button>
           <button className="bg-blue-600 text-white px-7 py-2 rounded-lg" onClick={() => setVestibular("UERJ")}>UERJ</button>
-        
+
 
           <p className="text-sm text-gray-400">Escolhido: {vestibular}</p>
 

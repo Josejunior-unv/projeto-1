@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { supabase } from '../SUPABASE' 
+import { supabase } from '../SUPABASE'
 
 function Login({ onLoginSuccess }) {
   const [email, setEmail] = useState('')
@@ -23,13 +23,13 @@ function Login({ onLoginSuccess }) {
     if (error) {
       setErro(error.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos.' : error.message)
     } else {
-      
+
       onLoginSuccess(data.user)
     }
   }
 
   return (
-    <div 
+    <div
       className="flex items-center justify-center min-h-screen px-4"
       style={{
         backgroundImage: "url('/image.png')",
@@ -50,8 +50,8 @@ function Login({ onLoginSuccess }) {
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-gray-300">E-mail</label>
-            <input 
-              type="email" 
+            <input
+              type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -62,17 +62,17 @@ function Login({ onLoginSuccess }) {
 
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-gray-300">Senha</label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               required
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              className="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+              className="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"  
               placeholder="••••••••"
             />
           </div>
 
-          <button 
+          <button
             type="submit"
             disabled={carregando}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg transition-colors mt-2"
