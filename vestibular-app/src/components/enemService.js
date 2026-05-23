@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { supabase } from '../SUPABASE.js';
 
 export async function buscarestatisticas(userId) {
@@ -41,3 +42,32 @@ export async function buscarestatisticas(userId) {
         dadosPizza 
     };
 }
+=======
+// enemService.js
+
+export async function buscarQuestoesDoAno(ano) {
+  try {
+    const resposta = await fetch(
+      `https://api.enem.dev/v1/exams/${ano}/questions?limit=10`
+    );
+
+    if (!resposta.ok) {
+      throw new Error(
+        "Erro na requisição da API do ENEM"
+      );
+    }
+
+    const dados = await resposta.json();
+
+    // A API retorna { questions: [...] }
+    return dados.questions || [];
+  } catch (erro) {
+    console.error(
+      "Falha ao buscar dados do ENEM:",
+      erro
+    );
+
+    return [];
+  }
+}
+>>>>>>> eb32c19a8efc78eb2f089b2159e16f92ec292a48
