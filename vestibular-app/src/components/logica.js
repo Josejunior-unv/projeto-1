@@ -1,8 +1,8 @@
 let materias = [
-  { nome: "Matemática", peso: 1 },
-  { nome: "Português", peso: 1 },
-  { nome: "Física", peso: 1 },
-  { nome: "Química", peso: 1 },
+  { nome: "Matemática", peso: 3 },
+  { nome: "Português", peso: 2 },
+  { nome: "Física", peso: 2 },     
+  { nome: "Química", peso: 2 },
   { nome: "Biologia", peso: 1 },
   { nome: "História", peso: 1 },
   { nome: "Geografia", peso: 1 },

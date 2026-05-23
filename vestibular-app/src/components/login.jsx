@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../SUPABASE'
 
-function Login({ onLoginSuccess }) {
+function Login() {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
@@ -22,10 +22,10 @@ function Login({ onLoginSuccess }) {
 
     if (error) {
       setErro(error.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos.' : error.message)
-    } else {
+    }  else {
+  // onAuthStateChange no App.jsx cuida do resto automaticamente
+}
 
-      onLoginSuccess(data.user)
-    }
   }
 
   return (

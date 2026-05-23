@@ -1,17 +1,43 @@
-// Função que conecta com a API pública enem.dev
-export async function buscarQuestoesDoAno(ano) {
-  try {
-    // Buscamos as questões do ano escolhido limitando a 10 para teste rápido
-    const resposta = await fetch(`https://api.enem.dev/v1/exams/${ano}/questions?limit=10`);
+import { supabase } from '../SUPABASE.js';
 
-    if (!resposta.ok) {
-      throw new Error("Erro na requisição da API do ENEM");
-    }
+export async function buscarestatisticas(userId) {
+    if (!userId) return null;
 
-    const dados = await resposta.json();
-    return dados.questions; // Retorna apenas a lista de questões tratadas
-  } catch (erro) {
-    console.error("Falha ao buscar dados do ENEM:", erro);
-    return []; // Retorna lista vazia para o app não quebrar se a API cair
-  }
+    // 1. Busca todos os dados de uma vez
+    const { data: questoes, error } = await supabase
+        .from('questoes_respondidas')
+        .select('materia, acertou')
+        .eq('usuario_id', userId);
+
+    if (error) { console.error(error); return null; }
+
+    // 2. Cálculo denso: Agrupa matérias e conta acertos/erros
+    const stats = {
+        acertos: 0,
+        erros: 0,
+        materias: {}
+    };
+
+    (questoes || []).forEach(q => {
+        // Conta acertos e erros globais
+        if (q.acertou) stats.acertos++;
+        else stats.erros++;
+
+        // Agrupa para a Pizza: Conta quantas vezes cada matéria aparece
+        if (q.materia) {
+            stats.materias[q.materia] = (stats.materias[q.materia] || 0) + 1;
+        }
+    });
+
+    // 3. Formata para o Recharts
+    const dadosPizza = Object.keys(stats.materias).map(nome => ({
+        name: nome,
+        value: stats.materias[nome]
+    }));
+
+    return { 
+        acertos: stats.acertos, 
+        erros: stats.erros, 
+        dadosPizza 
+    };
 }

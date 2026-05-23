@@ -1,9 +1,14 @@
 import QuestoesEnem from './QuestoesEnem'
 import { useState } from 'react'
+import Estatisticas from './estatisticas.jsx' // Importando o componente .jsx
 
-function InterfaceBase({ cronograma }) {
+function InterfaceBase({ cronograma, userId }) {
   const [abaAtiva, setAbaAtiva] = useState('cronograma')
+  
+  // Garante que a listaCronograma existe para todo o componente
   const listaCronograma = Array.isArray(cronograma) ? cronograma : []
+
+  console.log("userId no InterfaceBase:", userId, typeof userId)
 
   return (
     <div className="flex min-h-screen bg-gray-950 text-white font-sans selection:bg-blue-500 selection:text-white">
@@ -60,7 +65,6 @@ function InterfaceBase({ cronograma }) {
               <span className="text-base">📝</span> Simulados & Notas
             </button>
 
-            {/* O BOTÃO FOI MOVIDO PARA CÁ! Agora ele está dentro do menu lateral */}
             <button
               onClick={() => setAbaAtiva('enem')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold
@@ -72,6 +76,19 @@ function InterfaceBase({ cronograma }) {
               }`}
             >
               <span className="text-base">🎓</span> Questões do ENEM
+            </button>
+
+            <button
+              onClick={() => setAbaAtiva('estatisticas')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold
+                         transform transition-all duration-300 ease-in-out
+                         active:scale-95 hover:scale-[1.02] ${
+                abaAtiva === 'estatisticas'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-bold'
+                  : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
+              }`}
+            >
+              <span className="text-base">📈</span> Estatísticas
             </button>
           </nav>
         </div>
@@ -149,7 +166,7 @@ function InterfaceBase({ cronograma }) {
           </div>
         )}
 
-        {/* ABA: QUESTÕES DO ENEM (Injetada aqui para carregar as perguntas na tela) */}
+        {/* ABA: QUESTÕES DO ENEM */}
         {abaAtiva === 'enem' && (
           <div className="max-w-3xl transition-all duration-500">
             <div className="mb-6 cursor-default">
@@ -158,6 +175,11 @@ function InterfaceBase({ cronograma }) {
             </div>
             <QuestoesEnem />
           </div>
+        )}
+
+        {/* ABA: ESTATÍSTICAS (Chamando o componente que vai ler o arquivo .js interno) */}
+        {abaAtiva === 'estatisticas' && (
+          <Estatisticas userId={userId} />
         )}
 
       </main>

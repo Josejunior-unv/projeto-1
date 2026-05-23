@@ -85,12 +85,11 @@ function App() {
   }
 
   if (!user) {
-    return <Login onLoginSuccess={(usuarioLogado) => setUser(usuarioLogado)} />
-  }
-
+  return <Login />
+}
   return (
     <div className="bg-gray-950 min-h-screen relative">
-      {/* Botão flutuante para Deslogar mantido de forma limpa no topo */}
+     
       <button
         onClick={handleLogout}
         className="absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-2 px-4 rounded-lg transition shadow-md z-50 transform hover:scale-105 active:scale-95"
@@ -98,7 +97,7 @@ function App() {
         Sair da Conta
       </button>
 
-      {/* Fluxo de telas gerenciado pelas etapas (Steps) */}
+      
       {step === 1 && <StepVestibular onNext={handleNext} />}
       {step === 2 && <StepVestibular2 onNext={handleNext} />}
       {step === 3 && (
@@ -108,8 +107,8 @@ function App() {
         />
       )}
 
-      {/* STEP 4: A sua Dashboard Principal permanente com as Abas LateraisAnimadas */}
-      {step === 4 && <InterfaceBase cronograma={data.cronograma} />}
+     
+      {step === 4 && <InterfaceBase cronograma={data.cronograma} userId={user.id} />}
     </div>
   )
 }
