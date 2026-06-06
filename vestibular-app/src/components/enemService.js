@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 import { supabase } from '../SUPABASE.js';
 
 export async function buscarestatisticas(userId) {
@@ -42,7 +42,7 @@ export async function buscarestatisticas(userId) {
         dadosPizza 
     };
 }
-=======
+
 // enemService.js
 
 export async function buscarQuestoesDoAno(ano) {
@@ -70,4 +70,4 @@ export async function buscarQuestoesDoAno(ano) {
     return [];
   }
 }
->>>>>>> eb32c19a8efc78eb2f089b2159e16f92ec292a48
+

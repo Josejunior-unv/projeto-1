@@ -23,10 +23,7 @@ function Login() {
     if (error) {
       setErro(error.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos.' : error.message)
 
-    }  else {
-  // onAuthStateChange no App.jsx cuida do resto automaticamente
-}
-
+    
 
     } else {
       onLoginSuccess(data.user)
@@ -127,6 +124,6 @@ function Login() {
       </div>
     </div>
   )
-}
+}   
 
 export default Login

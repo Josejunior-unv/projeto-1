@@ -1,14 +1,6 @@
 
 import { useState, useEffect } from 'react';
 
-x
-
-import {
-  useEffect,
-  useState,
-} from "react";
-
-import { buscarQuestoesDoAno } from "./enemService";
 
 
 function QuestoesEnem() {
