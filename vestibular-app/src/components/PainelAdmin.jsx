@@ -1,14 +1,12 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 function PainelAdmin() {
-  
-  const [area, setArea] = useState('geral');
-  const [conteudo, setConteudo] = useState('');
+  const [area, setArea] = useState("geral");
+  const [conteudo, setConteudo] = useState("");
 
- 
   const handleSubmit = (e) => {
-    e.preventDefault(); 
-    
+    e.preventDefault();
+
     console.log("Área selecionada:", area);
     console.log("Conteúdo digitado:", conteudo);
     alert(`Salvo com sucesso na área: ${area}`);
@@ -16,11 +14,11 @@ function PainelAdmin() {
 
   return (
     <div className="p-8 bg-gray-900 rounded-lg shadow-xl text-white w-full max-w-2xl mx-auto mt-10 border border-gray-800">
-      <h2 className="text-3xl font-bold mb-6 text-blue-500">Painel do Administrador</h2>
-      
+      <h2 className="text-3xl font-bold mb-6 text-blue-500">
+        Painel do Administrador
+      </h2>
+
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        
-        // PIT aq deu uma boa e vai dar certo
         <label className="flex flex-col gap-2">
           <span className="font-semibold text-gray-300">Área de Atuação:</span>
           <select
@@ -34,9 +32,10 @@ function PainelAdmin() {
           </select>
         </label>
 
-        
         <label className="flex flex-col gap-2">
-          <span className="font-semibold text-gray-300">Adicionar Novo Conteúdo:</span>
+          <span className="font-semibold text-gray-300">
+            Adicionar Novo Conteúdo:
+          </span>
           <textarea
             value={conteudo}
             onChange={(e) => setConteudo(e.target.value)}
