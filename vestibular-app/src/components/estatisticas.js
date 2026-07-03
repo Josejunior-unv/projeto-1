@@ -16,7 +16,8 @@ export async function processarEstatisticas(userId) {
         acertos: 0,
         erros: 0,
         evolucao: {},
-        materias: {}
+        materias: {},
+        porMateria: {}
     };
 
     data.forEach(q => {
@@ -29,6 +30,11 @@ export async function processarEstatisticas(userId) {
         if (q.acertou) stats.evolucao[dataFormatada].acertos++;
 
         stats.materias[q.materia] = (stats.materias[q.materia] || 0) + 1;
+
+        // Desempenho (acertos/total) por matéria
+        if (!stats.porMateria[q.materia]) stats.porMateria[q.materia] = { acertos: 0, total: 0 };
+        stats.porMateria[q.materia].total++;
+        if (q.acertou) stats.porMateria[q.materia].acertos++;
     });
 
     // Proteção contra divisão por zero se não houver questões
@@ -37,7 +43,9 @@ export async function processarEstatisticas(userId) {
     return {
         geral: {
             taxaAcerto: taxaAcertoGeral,
-            totalQuestoes: stats.total
+            totalQuestoes: stats.total,
+            acertos: stats.acertos,
+            erros: stats.erros
         },
         evolucao: Object.keys(stats.evolucao).map(data => ({
             data,
@@ -46,6 +54,20 @@ export async function processarEstatisticas(userId) {
         pizza: Object.keys(stats.materias).map(m => ({
             name: m,
             value: stats.materias[m]
+        })),
+        porMateria: Object.keys(stats.porMateria)
+            .map(m => ({
+                name: m,
+                total: stats.porMateria[m].total,
+                acertos: stats.porMateria[m].acertos,
+                pct: Math.round((stats.porMateria[m].acertos / stats.porMateria[m].total) * 100)
+            }))
+            .sort((a, b) => b.total - a.total),
+        // Últimas atividades (mais recentes primeiro)
+        ultimas: data.slice(-8).reverse().map(q => ({
+            materia: q.materia,
+            acertou: q.acertou,
+            data: q.data
         }))
     };
 }
@@ -76,6 +98,29 @@ export async function salvarSessaoEstudos(userId, acertos, erros, materia, dataS
     const { data, error } = await supabase
         .from('questoes_respondidas')
         .insert(novasQuestoes);
+
+    return { data, error };
+}
+
+/**
+ * Registra UMA questão respondida (usada na tela de Questões do ENEM).
+ * Persiste no Supabase, na mesma tabela usada pela tela de Estatísticas,
+ * de forma que o desempenho fica salvo permanentemente e as estatísticas
+ * antigas nunca são perdidas (apenas inserimos, nunca apagamos).
+ */
+export async function registrarRespostaEnem(userId, acertou, materia) {
+    if (!userId) return { error: 'Usuário não autenticado' };
+
+    const registro = {
+        usuario_id: userId,
+        acertou: !!acertou,
+        materia: materia || 'ENEM',
+        data: new Date().toISOString().split('T')[0],
+    };
+
+    const { data, error } = await supabase
+        .from('questoes_respondidas')
+        .insert([registro]);
 
     return { data, error };
 }

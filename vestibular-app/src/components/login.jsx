@@ -13,7 +13,7 @@ function Login() {
     setErro('')
     setCarregando(true)
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email: email,
       password: senha,
     })
@@ -22,13 +22,9 @@ function Login() {
 
     if (error) {
       setErro(error.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos.' : error.message)
-
-    
-
-    } else {
-      onLoginSuccess(data.user)
     }
-
+    // Em caso de sucesso, o redirecionamento é feito automaticamente pelo
+    // listener onAuthStateChange no App.jsx — nenhuma ação extra é necessária.
   }
 
   function handleAvisoManual(funcionalidade) {

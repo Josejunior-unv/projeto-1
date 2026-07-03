@@ -1,234 +1,361 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../SUPABASE";
+import { MATERIAS, TIPOS_MATERIAL, coresDe } from "../constants/materias";
+import { listarMateriais } from "./materiaisService";
+import {
+  carregarConcluidas,
+  definirConcluida,
+} from "./tarefasStatusService";
+import { usePersistedState } from "../hooks/usePersistedState";
 
-export default function TarefasFeitas() {
-  const listasDownload = [
-    {
-      id: 1,
-      materia: "Matemática",
-      descricao: "Funções, Geometria e base essencial para Cálculo.",
-      tag: "Foco UERJ",
-      corTexto: "text-blue-400",
-      corFundo: "bg-blue-500/10",
-      corBorda: "border-blue-500/20",
-      corHover: "hover:border-blue-400",
-    },
-    {
-      id: 2,
-      materia: "Português",
-      descricao: "Interpretação de texto, gramática e literatura.",
-      tag: "Linguagens",
-      corTexto: "text-yellow-300",
-      corFundo: "bg-yellow-500/10",
-      corBorda: "border-yellow-500/20",
-      corHover: "hover:border-yellow-300",
-    },
-    {
-      id: 3,
-      materia: "Física",
-      descricao: "Cinemática, Leis de Newton e Eletromagnetismo.",
-      tag: "Exatas",
-      corTexto: "text-emerald-400",
-      corFundo: "bg-emerald-500/10",
-      corBorda: "border-emerald-500/20",
-      corHover: "hover:border-emerald-400",
-    },
-    {
-      id: 4,
-      materia: "Química",
-      descricao: "Estequiometria e Química Orgânica passo a passo.",
-      tag: "Natureza",
-      corTexto: "text-purple-400",
-      corFundo: "bg-purple-500/10",
-      corBorda: "border-purple-500/20",
-      corHover: "hover:border-purple-400",
-    },
-    {
-      id: 5,
-      materia: "Biologia",
-      descricao: "Citologia, Genética e Ecologia para vestibulares.",
-      tag: "Natureza",
-      corTexto: "text-green-300",
-      corFundo: "bg-green-500/10",
-      corBorda: "border-green-500/20",
-      corHover: "hover:border-green-300",
-    },
-    {
-      id: 6,
-      materia: "História",
-      descricao: "História do Brasil e Geral: temas recorrentes do ENEM.",
-      tag: "Humanas",
-      corTexto: "text-amber-300",
-      corFundo: "bg-amber-500/10",
-      corBorda: "border-amber-500/20",
-      corHover: "hover:border-amber-300",
-    },
-    {
-      id: 7,
-      materia: "Geografia",
-      descricao: "Geografia física e humana com mapas e atualidades.",
-      tag: "Humanas",
-      corTexto: "text-cyan-300",
-      corFundo: "bg-cyan-500/10",
-      corBorda: "border-cyan-500/20",
-      corHover: "hover:border-cyan-300",
-    },
-    {
-      id: 8,
-      materia: "Inglês",
-      descricao: "Leitura e vocabulário: compreensão de textos em inglês.",
-      tag: "Língua Estrangeira",
-      corTexto: "text-sky-300",
-      corFundo: "bg-sky-500/10",
-      corBorda: "border-sky-500/20",
-      corHover: "hover:border-sky-300",
-    },
-    {
-      id: 9,
-      materia: "Redação",
-      descricao: "Coletânea de temas, estrutura e modelos de redação.",
-      tag: "Prática",
-      corTexto: "text-rose-400",
-      corFundo: "bg-rose-500/10",
-      corBorda: "border-rose-500/20",
-      corHover: "hover:border-rose-400",
-    },
-    {
-      id: 10,
-      materia: "Filosofia",
-      descricao: "Conceitos e autores essenciais para questões de humanas.",
-      tag: "Humanas",
-      corTexto: "text-indigo-300",
-      corFundo: "bg-indigo-500/10",
-      corBorda: "border-indigo-500/20",
-      corHover: "hover:border-indigo-300",
-    },
-  ];
+const formatarData = (iso) => {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return "";
+  }
+};
 
-  const [selecionada, setSelecionada] = useState(null);
-  const [arquivos, setArquivos] = useState([]);
-  const [loadingArquivos, setLoadingArquivos] = useState(false);
+const infoMateria = (nome) =>
+  MATERIAS.find((m) => m.nome === nome) || { nome, icone: "📚", cor: "blue" };
+const infoTipo = (id) =>
+  TIPOS_MATERIAL.find((t) => t.id === id) || { label: "Material", icone: "📎" };
+
+function acaoDoTipo(tipo) {
+  if (tipo === "pdf") return { texto: "Abrir PDF", icone: "📄" };
+  if (tipo === "video") return { texto: "Assistir vídeo", icone: "▶" };
+  if (tipo === "link") return { texto: "Abrir link", icone: "🔗" };
+  return null;
+}
+
+export default function TarefasFeitas({ userId }) {
+  const [materiais, setMateriais] = useState([]);
+  const [concluidas, setConcluidas] = useState({});
+  const [carregando, setCarregando] = useState(true);
+  const [materiaAberta, setMateriaAberta] = usePersistedState(
+    "tarefas_materiaAberta",
+    null,
+  );
 
   useEffect(() => {
-    if (!selecionada) return;
-
-    async function buscar() {
-      setLoadingArquivos(true);
-
-      const { data, error } = await supabase
-        .from("materiais_estudo")
-        .select("*")
-        .eq("materia", selecionada.materia)
-        .order("criado_em", { ascending: false });
-
-      if (!error) setArquivos(data);
-      setLoadingArquivos(false);
+    let ativo = true;
+    async function carregar() {
+      const [{ data }, mapaConcluidas] = await Promise.all([
+        listarMateriais(),
+        carregarConcluidas(userId),
+      ]);
+      if (!ativo) return;
+      setMateriais(data);
+      setConcluidas(mapaConcluidas);
+      setCarregando(false);
     }
+    carregar();
 
-    buscar();
-  }, [selecionada]);
+    const canal = supabase
+      .channel("tarefas_materiais")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "materiais_estudo" },
+        (payload) => setMateriais((prev) => [payload.new, ...prev]),
+      )
+      .subscribe();
+
+    return () => {
+      ativo = false;
+      if (canal && typeof canal.unsubscribe === "function") canal.unsubscribe();
+      else if (canal) supabase.removeChannel?.(canal);
+    };
+  }, [userId]);
+
+  async function alternarConclusao(id) {
+    const novo = !concluidas[id];
+    setConcluidas((prev) => {
+      const p = { ...prev };
+      if (novo) p[id] = true;
+      else delete p[id];
+      return p;
+    });
+    await definirConcluida(userId, id, novo);
+  }
+
+  // Agrega materiais por matéria (contagens, progresso, última atualização).
+  const porMateria = useMemo(() => {
+    const mapa = {};
+    materiais.forEach((m) => {
+      if (!mapa[m.materia])
+        mapa[m.materia] = { total: 0, feitas: 0, ultima: null, itens: [] };
+      const g = mapa[m.materia];
+      g.total++;
+      if (concluidas[m.id]) g.feitas++;
+      if (!g.ultima || m.criado_em > g.ultima) g.ultima = m.criado_em;
+      g.itens.push(m);
+    });
+    return mapa;
+  }, [materiais, concluidas]);
+
+  const pastas = useMemo(
+    () => MATERIAS.filter((m) => porMateria[m.nome]),
+    [porMateria],
+  );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-5xl mx-auto p-8"
-    >
-      <div className="mb-8">
-        <h2 className="text-3xl font-black text-white tracking-tight mb-2">
-          Listas de Exercícios
+    <div className="w-full max-w-5xl mx-auto">
+      <div className="mb-6">
+        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-1">
+          Minhas Tarefas
         </h2>
         <p className="text-slate-400">
-          Clique em uma matéria para ver os materiais já cadastrados.
+          {materiaAberta
+            ? "Marque cada item conforme for concluindo."
+            : "Escolha uma matéria para ver seus materiais e tarefas."}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {listasDownload.map((item, index) => (
-          <motion.button
-            key={item.id}
-            onClick={() => setSelecionada(item)}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.06 }}
-            className={`group relative flex flex-col p-6 rounded-3xl bg-slate-900/50 backdrop-blur-sm border ${item.corBorda} ${item.corHover} transition-all duration-300 hover:-translate-y-1 hover:shadow-xl text-left`}
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div
-                className={`px-3 py-1 rounded-full text-xs font-bold ${item.corTexto} ${item.corFundo}`}
-              >
-                {item.tag}
-              </div>
-              <div className="text-slate-500 group-hover:text-white transition-colors">
-                📄
-              </div>
-            </div>
-
-            <h3 className="text-xl font-bold text-white mb-2">
-              {item.materia}
-            </h3>
-            <p className="text-sm text-slate-400 flex-1">{item.descricao}</p>
-
-            <div className="mt-6 text-sm font-semibold text-slate-300 flex items-center gap-2 group-hover:text-white transition-colors">
-              <span>Ver materiais</span>
-              <span className="group-hover:translate-x-1 transition-transform">
-                →
-              </span>
-            </div>
-          </motion.button>
-        ))}
-      </div>
-
-      <AnimatePresence>
-        {selecionada && (
-          <motion.div
-            className="fixed inset-0 bg-black/60 flex items-center justify-center p-6 z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
+      {/* SKELETON */}
+      {carregando ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              className="h-40 rounded-3xl bg-slate-900/50 border border-slate-800 animate-pulse"
+            />
+          ))}
+        </div>
+      ) : pastas.length === 0 ? (
+        <div className="p-12 rounded-3xl border border-dashed border-slate-800 text-center">
+          <div className="text-5xl mb-3">📭</div>
+          <p className="text-slate-300 font-semibold">Nenhuma tarefa por aqui</p>
+          <p className="text-slate-500 text-sm mt-1">
+            Quando um professor publicar um material, ele aparece aqui.
+          </p>
+        </div>
+      ) : (
+        <AnimatePresence mode="wait">
+          {!materiaAberta ? (
+            /* ===== VISÃO DE PASTAS ===== */
             <motion.div
-              className="bg-gray-900 p-6 rounded-2xl w-full max-w-2xl border border-gray-700"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 20, opacity: 0 }}
+              key="pastas"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-2 md:grid-cols-3 gap-4"
             >
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-white">
-                  {selecionada.materia}
-                </h2>
-                <button
-                  onClick={() => setSelecionada(null)}
-                  className="text-slate-400 hover:text-white"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {loadingArquivos ? (
-                <p className="text-slate-400">Carregando...</p>
-              ) : arquivos.length === 0 ? (
-                <p className="text-slate-400">Nenhum material encontrado.</p>
-              ) : (
-                <div className="space-y-3">
-                  {arquivos.map((a) => (
-                    <a
-                      key={a.id}
-                      href={a.url_arquivo}
-                      target="_blank"
-                      className="block p-3 bg-gray-800 rounded-lg border border-gray-700 hover:border-blue-500"
-                    >
-                      <p className="text-white font-semibold">{a.titulo}</p>
-                      <p className="text-slate-400 text-sm">{a.descricao}</p>
-                    </a>
-                  ))}
-                </div>
-              )}
+              {pastas.map((m, index) => {
+                const g = porMateria[m.nome];
+                const c = coresDe(m.cor);
+                const pct = g.total ? Math.round((g.feitas / g.total) * 100) : 0;
+                return (
+                  <motion.button
+                    key={m.nome}
+                    onClick={() => setMateriaAberta(m.nome)}
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: Math.min(index * 0.04, 0.3) }}
+                    whileTap={{ scale: 0.97 }}
+                    className={`group relative overflow-hidden text-left p-5 rounded-3xl bg-gradient-to-br from-slate-900/80 to-slate-900/40 backdrop-blur-sm border ${c.borda} ${c.hover} transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/40`}
+                  >
+                    {/* brilho no hover */}
+                    <div
+                      className={`absolute -top-10 -right-10 w-24 h-24 rounded-full ${c.fundo} blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                    />
+                    <div className="relative">
+                      <div className="flex items-center justify-between mb-4">
+                        <div
+                          className={`w-14 h-14 rounded-2xl ${c.fundo} flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-300`}
+                        >
+                          📁
+                        </div>
+                        <span className="text-2xl opacity-70">{m.icone}</span>
+                      </div>
+                      <h3 className="font-bold text-white text-lg leading-tight">
+                        {m.nome}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1 text-xs">
+                        <span className="text-slate-400">
+                          {g.total} {g.total === 1 ? "item" : "itens"}
+                        </span>
+                        <span className="text-slate-600">·</span>
+                        <span className={`font-bold ${c.texto}`}>{pct}%</span>
+                      </div>
+                      <div className="mt-3 w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.6, ease: "easeOut" }}
+                        />
+                      </div>
+                      <p className="text-[11px] text-slate-600 mt-2">
+                        {g.feitas}/{g.total} · {formatarData(g.ultima)}
+                      </p>
+                    </div>
+                  </motion.button>
+                );
+              })}
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+          ) : (
+            /* ===== VISÃO DENTRO DA MATÉRIA ===== */
+            <motion.div
+              key="itens"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              <button
+                onClick={() => setMateriaAberta(null)}
+                className="inline-flex items-center gap-2 text-slate-400 hover:text-white font-semibold mb-5 transition"
+              >
+                <span>←</span> Voltar às matérias
+              </button>
+
+              {(() => {
+                const g = porMateria[materiaAberta];
+                const mat = infoMateria(materiaAberta);
+                const c = coresDe(mat.cor);
+                if (!g) return null;
+                return (
+                  <>
+                    <div className="flex items-center gap-3 mb-5">
+                      <span
+                        className={`w-12 h-12 flex items-center justify-center rounded-2xl text-2xl ${c.fundo}`}
+                      >
+                        {mat.icone}
+                      </span>
+                      <div>
+                        <h3 className="text-xl font-black text-white">
+                          {materiaAberta}
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          {g.feitas}/{g.total} concluído
+                          {g.feitas === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <ul className="space-y-3">
+                      {g.itens.map((m) => {
+                        const tipo = infoTipo(m.tipo);
+                        const feita = !!concluidas[m.id];
+                        const acao = acaoDoTipo(m.tipo);
+                        const temLink = !!m.url_arquivo;
+                        return (
+                          <motion.li
+                            key={m.id}
+                            layout
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`p-4 sm:p-5 rounded-2xl border transition-all ${
+                              feita
+                                ? "bg-emerald-500/[0.04] border-emerald-500/30"
+                                : "bg-slate-900/50 border-slate-800 hover:border-slate-700"
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              {/* Checkbox */}
+                              <button
+                                onClick={() => alternarConclusao(m.id)}
+                                aria-pressed={feita}
+                                title={
+                                  feita ? "Marcar como pendente" : "Concluir"
+                                }
+                                className={`mt-0.5 w-6 h-6 shrink-0 rounded-lg border-2 flex items-center justify-center transition-all active:scale-90 ${
+                                  feita
+                                    ? "bg-emerald-500 border-emerald-500 text-white"
+                                    : "border-slate-600 hover:border-emerald-400"
+                                }`}
+                              >
+                                {feita && (
+                                  <motion.span
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="text-sm font-bold"
+                                  >
+                                    ✓
+                                  </motion.span>
+                                )}
+                              </button>
+
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <h4
+                                    className={`font-bold ${
+                                      feita
+                                        ? "text-slate-400 line-through"
+                                        : "text-white"
+                                    }`}
+                                  >
+                                    {m.titulo}
+                                  </h4>
+                                  <span className="flex items-center gap-1 text-[10px] uppercase font-bold tracking-wide bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md">
+                                    <span>{tipo.icone}</span>
+                                    {tipo.label}
+                                  </span>
+                                </div>
+
+                                {m.descricao && (
+                                  <p className="text-sm text-slate-400 mt-1 leading-6">
+                                    {m.descricao}
+                                  </p>
+                                )}
+
+                                <div className="flex items-center gap-3 flex-wrap mt-2 text-xs text-slate-500">
+                                  {m.professor_nome && (
+                                    <span className="capitalize">
+                                      👤 {m.professor_nome}
+                                    </span>
+                                  )}
+                                  <span>📅 {formatarData(m.criado_em)}</span>
+                                </div>
+
+                                {temLink && (
+                                  <div className="flex items-center gap-2 flex-wrap mt-3">
+                                    {acao && (
+                                      <a
+                                        href={m.url_arquivo}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-bold text-white transition-all active:scale-95 ${
+                                          m.tipo === "pdf"
+                                            ? "bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500"
+                                            : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500"
+                                        }`}
+                                      >
+                                        <span>{acao.icone}</span>
+                                        {acao.texto}
+                                      </a>
+                                    )}
+                                    {m.tipo === "pdf" && (
+                                      <a
+                                        href={m.url_arquivo}
+                                        download={m.arquivo_nome || true}
+                                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition active:scale-95"
+                                      >
+                                        ⬇ Download
+                                      </a>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </motion.li>
+                        );
+                      })}
+                    </ul>
+                  </>
+                );
+              })()}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
+    </div>
   );
 }

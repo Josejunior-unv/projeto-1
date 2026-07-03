@@ -1,20 +1,23 @@
-import { useState, useEffect } from 'react'
-import StepVestibular from './components/StepVestibular'
-import StepVestibular2 from './components/StepVestibular2'
-import StepVestibular3 from './components/StepVestibular3'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import InterfaceBase from './components/Interface_base'
 import Login from './components/login'
 import PainelAdmin from './components/PainelAdmin'
+import Onboarding from './components/Onboarding'
 import { supabase } from './SUPABASE'
 
 function App() {
-  let [user, setUser] = useState(null)
-  let [cargo, setCargo] = useState('aluno')
-  let [data, setData] = useState({})
-  let [step, setStep] = useState(1)
-  let [carregandoSessao, setCarregandoSessao] = useState(true)
+  const [user, setUser] = useState(null)
+  const [cargo, setCargo] = useState('aluno')
+  const [cronograma, setCronograma] = useState(null)
+  const [temCronograma, setTemCronograma] = useState(false)
+  const [carregandoSessao, setCarregandoSessao] = useState(true)
+  // Guarda o id do usuário já processado. Evita recarregar/remontar a árvore
+  // quando o Supabase re-emite eventos da MESMA sessão (foco na aba, refresh de
+  // token, minimizar/restaurar) — que era o que apagava o estado da tela.
+  const usuarioIdRef = useRef(undefined)
 
-  async function buscarPerfilUsuario(userId) {
+  const carregarPerfil = useCallback(async (userId) => {
     try {
       const { data: perfil } = await supabase
         .from('profiles')
@@ -22,15 +25,13 @@ function App() {
         .eq('user_id', userId)
         .single()
 
-      if (perfil) {
-        setCargo(perfil.cargo)
-      }
+      setCargo(perfil?.cargo ?? 'aluno')
     } catch (error) {
-      console.error("Erro ao buscar cargo:", error)
+      console.error('Erro ao buscar cargo:', error)
     }
-  }
+  }, [])
 
-  async function buscarCronogramaSalvo(userId) {
+  const carregarCronograma = useCallback(async (userId) => {
     try {
       const { data: tabela } = await supabase
         .from('cronogramas')
@@ -39,57 +40,62 @@ function App() {
         .single()
 
       if (tabela && tabela.dados_cronograma) {
-        setData({ cronograma: tabela.dados_cronograma })
-        setStep(4)
+        setCronograma(tabela.dados_cronograma)
+        setTemCronograma(true)
       } else {
-        setStep(1)
+        setTemCronograma(false)
       }
-    } catch (err) {
-      setStep(1)
-    } finally {
-      setCarregandoSessao(false)
+    } catch {
+      setTemCronograma(false)
     }
-  }
+  }, [])
+
+  // Carrega perfil + cronograma juntos e só então libera a tela — evita
+  // "flashes" de redirecionamento enquanto os dados chegam.
+  const carregarDadosSessao = useCallback(async (userId) => {
+    setCarregandoSessao(true)
+    await Promise.all([carregarPerfil(userId), carregarCronograma(userId)])
+    setCarregandoSessao(false)
+  }, [carregarPerfil, carregarCronograma])
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_evento, session) => {
       const usuario = session?.user ?? null
-      setUser(usuario)
-      if (usuario) {
-        buscarPerfilUsuario(usuario.id)
-        buscarCronogramaSalvo(usuario.id)
-      } else {
-        setCarregandoSessao(false)
-      }
-    })
+      const novoId = usuario?.id ?? null
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const usuario = session?.user ?? null
+      // Só reage quando QUEM está logado muda de fato (login, logout, troca de
+      // conta). Re-emissões da mesma sessão são ignoradas — assim a árvore não
+      // remonta e o estado da tela (aba, matéria, filtros...) é preservado.
+      if (novoId === usuarioIdRef.current) return
+      usuarioIdRef.current = novoId
+
       setUser(usuario)
+
       if (usuario) {
-        buscarPerfilUsuario(usuario.id)
-        buscarCronogramaSalvo(usuario.id)
+        carregarDadosSessao(usuario.id)
       } else {
         setCarregandoSessao(false)
-        setData({})
-        setStep(1)
+        setCronograma(null)
+        setTemCronograma(false)
         setCargo('aluno')
       }
     })
 
     return () => subscription.unsubscribe()
-  }, [])
-
-  function handleNext(info) {
-    setData(prevData => ({ ...prevData, ...info }))
-    setStep(prevStep => prevStep + 1)
-  }
+  }, [carregarDadosSessao])
 
   async function handleLogout() {
     await supabase.auth.signOut()
-    setData({})
-    setStep(1)
-    setCargo('aluno')
+    // O onAuthStateChange cuida de limpar o estado e os guards de rota
+    // redirecionam automaticamente para /login.
+  }
+
+  // Rota inicial coerente com o estado atual do usuário.
+  function rotaInicial() {
+    if (!user) return '/login'
+    if (cargo === 'admin') return '/admin'
+    if (!temCronograma) return '/onboarding'
+    return '/app'
   }
 
   if (carregandoSessao) {
@@ -100,43 +106,71 @@ function App() {
     )
   }
 
-  if (!user) {
-    return <Login />
-  }
-
-  if (cargo === 'admin') {
-    return (
-      <div className="bg-gray-950 min-h-screen relative flex items-center justify-center">
-        <button
-          onClick={handleLogout}
-          className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 text-white font-extrabold py-2 px-4 rounded-lg transition shadow-md z-50 transform hover:scale-105 active:scale-95"
-        >
-          Sair da Conta Admin
-        </button>
-        <PainelAdmin />
-      </div>
-    )
-  }
-
   return (
-    <div className="bg-gray-950 min-h-screen relative">
-      <button
-        onClick={handleLogout}
-        className="absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-2 px-4 rounded-lg transition shadow-md z-50 transform hover:scale-105 active:scale-95"
-      >
-        Sair da Conta
-      </button>
+    <Routes>
+      <Route
+        path="/login"
+        element={user ? <Navigate to={rotaInicial()} replace /> : <Login />}
+      />
 
-      {step === 1 && <StepVestibular onNext={handleNext} />}
-      {step === 2 && <StepVestibular2 onNext={handleNext} />}
-      {step === 3 && (
-        <StepVestibular3
-          cronograma={data.cronograma}
-          onSaveSuccess={() => buscarCronogramaSalvo(user.id)}
-        />
-      )}
-      {step === 4 && <InterfaceBase cronograma={data.cronograma} userId={user.id} />}
-    </div>
+      <Route
+        path="/admin"
+        element={
+          !user ? (
+            <Navigate to="/login" replace />
+          ) : cargo !== 'admin' ? (
+            <Navigate to="/app" replace />
+          ) : (
+            <div className="bg-gray-950 min-h-screen relative pt-16 pb-10">
+              <button
+                onClick={handleLogout}
+                className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 text-white font-extrabold py-2 px-4 rounded-lg transition shadow-md z-50 transform hover:scale-105 active:scale-95"
+              >
+                Sair da Conta Admin
+              </button>
+              <PainelAdmin />
+            </div>
+          )
+        }
+      />
+
+      <Route
+        path="/onboarding"
+        element={
+          !user ? (
+            <Navigate to="/login" replace />
+          ) : cargo === 'admin' ? (
+            <Navigate to="/admin" replace />
+          ) : temCronograma ? (
+            <Navigate to="/app" replace />
+          ) : (
+            <Onboarding onConcluir={() => carregarCronograma(user.id)} />
+          )
+        }
+      />
+
+      <Route path="/app" element={<Navigate to="/app/cronograma" replace />} />
+      <Route
+        path="/app/:aba"
+        element={
+          !user ? (
+            <Navigate to="/login" replace />
+          ) : cargo === 'admin' ? (
+            <Navigate to="/admin" replace />
+          ) : !temCronograma ? (
+            <Navigate to="/onboarding" replace />
+          ) : (
+            <InterfaceBase
+              cronograma={cronograma}
+              userId={user.id}
+              onLogout={handleLogout}
+            />
+          )
+        }
+      />
+
+      <Route path="*" element={<Navigate to={rotaInicial()} replace />} />
+    </Routes>
   )
 }
 

@@ -1,72 +1,87 @@
+// Serviço responsável por conversar com a API pública do ENEM (api.enem.dev).
 
-import { supabase } from '../SUPABASE.js';
+const API_BASE = "https://api.enem.dev/v1";
 
-export async function buscarestatisticas(userId) {
-    if (!userId) return null;
+// A API limita cada requisição a no máximo 50 questões por página.
+const LIMITE_POR_PAGINA = 50;
 
-    // 1. Busca todos os dados de uma vez
-    const { data: questoes, error } = await supabase
-        .from('questoes_respondidas')
-        .select('materia, acertou')
-        .eq('usuario_id', userId);
-
-    if (error) { console.error(error); return null; }
-
-    // 2. Cálculo denso: Agrupa matérias e conta acertos/erros
-    const stats = {
-        acertos: 0,
-        erros: 0,
-        materias: {}
-    };
-
-    (questoes || []).forEach(q => {
-        // Conta acertos e erros globais
-        if (q.acertou) stats.acertos++;
-        else stats.erros++;
-
-        // Agrupa para a Pizza: Conta quantas vezes cada matéria aparece
-        if (q.materia) {
-            stats.materias[q.materia] = (stats.materias[q.materia] || 0) + 1;
-        }
-    });
-
-    // 3. Formata para o Recharts
-    const dadosPizza = Object.keys(stats.materias).map(nome => ({
-        name: nome,
-        value: stats.materias[nome]
-    }));
-
-    return { 
-        acertos: stats.acertos, 
-        erros: stats.erros, 
-        dadosPizza 
-    };
+/**
+ * Identificador único e estável de uma questão.
+ * Combina ano + área + idioma + índice porque a API pode devolver:
+ *  - a MESMA questão em páginas diferentes (o offset é inclusivo, então cada
+ *    limite de página repete 1 questão — índices 50, 100, 150...);
+ *  - questões DIFERENTES com o mesmo índice (variantes de Inglês e Espanhol
+ *    compartilham os índices 1–5).
+ * Usar só `ano-índice` gerava chaves de React duplicadas e quebrava a resposta
+ * dessas questões.
+ */
+export function idQuestao(q) {
+  return `${q.year}-${q.discipline || "geral"}-${q.language || "x"}-${q.index}`;
 }
 
-// enemService.js
+/**
+ * Busca uma única página de questões de um ano.
+ * Mantida por compatibilidade e usada internamente pela paginação.
+ */
+export async function buscarQuestoesDoAno(ano, { limit = 10, offset = 0 } = {}) {
+  const resposta = await fetch(
+    `${API_BASE}/exams/${ano}/questions?limit=${limit}&offset=${offset}`
+  );
 
-export async function buscarQuestoesDoAno(ano) {
+  if (!resposta.ok) {
+    throw new Error("Erro na requisição da API do ENEM");
+  }
+
+  const dados = await resposta.json();
+
+  // A API retorna { metadata: {...}, questions: [...] }
+  return dados;
+}
+
+/**
+ * Busca TODAS as questões de um ano, percorrendo todas as páginas.
+ * Necessário para que o filtro por matéria tenha questões de todas as áreas
+ * (a prova é ordenada por área, então buscar só a 1ª página traria apenas
+ * Linguagens). As páginas seguintes são carregadas em paralelo.
+ */
+export async function buscarTodasQuestoesDoAno(ano) {
   try {
-    const resposta = await fetch(
-      `https://api.enem.dev/v1/exams/${ano}/questions?limit=10`
-    );
+    // 1ª página: também nos diz o total de questões existentes.
+    const primeira = await buscarQuestoesDoAno(ano, {
+      limit: LIMITE_POR_PAGINA,
+      offset: 0,
+    });
 
-    if (!resposta.ok) {
-      throw new Error(
-        "Erro na requisição da API do ENEM"
-      );
+    const total = primeira?.metadata?.total ?? 0;
+    let questoes = primeira?.questions ?? [];
+
+    // Monta os offsets restantes e busca em paralelo.
+    const offsetsRestantes = [];
+    for (let off = LIMITE_POR_PAGINA; off < total; off += LIMITE_POR_PAGINA) {
+      offsetsRestantes.push(off);
     }
 
-    const dados = await resposta.json();
+    if (offsetsRestantes.length > 0) {
+      const paginas = await Promise.all(
+        offsetsRestantes.map((offset) =>
+          buscarQuestoesDoAno(ano, { limit: LIMITE_POR_PAGINA, offset })
+        )
+      );
+      paginas.forEach((pag) => {
+        questoes = questoes.concat(pag?.questions ?? []);
+      });
+    }
 
-    // A API retorna { questions: [...] }
-    return dados.questions || [];
+    // Remove as questões duplicadas geradas pela paginação inclusiva da API.
+    const vistos = new Set();
+    return questoes.filter((q) => {
+      const id = idQuestao(q);
+      if (vistos.has(id)) return false;
+      vistos.add(id);
+      return true;
+    });
   } catch (erro) {
-    console.error(
-      "Falha ao buscar dados do ENEM:",
-      erro
-    );
-
+    console.error("Falha ao buscar dados do ENEM:", erro);
     return [];
   }
 }
