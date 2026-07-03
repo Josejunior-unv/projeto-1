@@ -17,6 +17,7 @@ import {
 } from "./materiaisService";
 import { enviarArquivo, formatarTamanho } from "./storageService";
 import GerenciarNoticias from "./GerenciarNoticias";
+import GerenciarUsuarios from "./GerenciarUsuarios";
 import { usePersistedState } from "../hooks/usePersistedState";
 
 const formatarData = (iso) => {
@@ -228,6 +229,7 @@ export default function PainelAdmin() {
         {[
           { id: "materiais", label: "📚 Materiais" },
           { id: "noticias", label: "📰 Notícias" },
+          { id: "usuarios", label: "👥 Usuários" },
         ].map((s) => (
           <button
             key={s.id}
@@ -244,6 +246,8 @@ export default function PainelAdmin() {
       </div>
 
       {secao === "noticias" && <GerenciarNoticias autor={professorNome} />}
+
+      {secao === "usuarios" && <GerenciarUsuarios />}
 
       {secao === "materiais" && (
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">

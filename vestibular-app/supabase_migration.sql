@@ -118,6 +118,72 @@ do $$ begin
   alter publication supabase_realtime add table public.noticias;
 exception when others then null; end $$;
 
+-- 6) GESTÃO DE USUÁRIOS — trocar cargo (aluno <-> admin) pelo Painel do Admin.
+--    Duas funções SECURITY DEFINER: rodam com o privilégio do dono e checam,
+--    por dentro, se QUEM chamou é admin. Assim o painel consegue LISTAR todos
+--    os usuários (com nome/e-mail vindos de auth.users) e TROCAR o cargo de
+--    qualquer um, sem precisar abrir a RLS da tabela profiles para terceiros.
+
+create or replace function public.admin_listar_usuarios()
+returns table (user_id uuid, nome text, email text, cargo text, criado_em timestamptz)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.profiles p
+    where p.user_id = auth.uid() and p.cargo = 'admin'
+  ) then
+    raise exception 'Acesso negado: apenas administradores.';
+  end if;
+
+  return query
+  select
+    u.id,
+    coalesce(nullif(u.raw_user_meta_data->>'nome', ''),
+             split_part(u.email, '@', 1)) as nome,
+    u.email::text,
+    coalesce(p.cargo, 'aluno') as cargo,
+    u.created_at
+  from auth.users u
+  left join public.profiles p on p.user_id = u.id
+  order by u.created_at desc;
+end;
+$$;
+
+create or replace function public.admin_definir_cargo(alvo uuid, novo_cargo text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.profiles p
+    where p.user_id = auth.uid() and p.cargo = 'admin'
+  ) then
+    raise exception 'Acesso negado: apenas administradores.';
+  end if;
+
+  if novo_cargo not in ('aluno', 'admin') then
+    raise exception 'Cargo invalido: %', novo_cargo;
+  end if;
+
+  -- Trava: um admin não pode rebaixar a si mesmo (evita ficar sem admin nenhum).
+  if alvo = auth.uid() and novo_cargo <> 'admin' then
+    raise exception 'Voce nao pode remover o seu proprio acesso de admin.';
+  end if;
+
+  insert into public.profiles (user_id, cargo)
+  values (alvo, novo_cargo)
+  on conflict (user_id) do update set cargo = excluded.cargo;
+end;
+$$;
+
+grant execute on function public.admin_listar_usuarios() to authenticated;
+grant execute on function public.admin_definir_cargo(uuid, text) to authenticated;
+
 -- ============================================================================
 -- Verificação rápida (deve retornar as 3 linhas abaixo sem erro):
 select 'materiais_estudo.tipo' as ok
