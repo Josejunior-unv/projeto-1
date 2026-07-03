@@ -1,31 +1,41 @@
 import { useState } from "react";
-import StepVestibular from "./StepVestibular";
-import StepVestibular2 from "./StepVestibular2";
-import StepVestibular3 from "./StepVestibular3";
+import { AnimatePresence } from "framer-motion";
+import PassoVestibular from "./onboarding/PassoVestibular";
+import PassoConfiguracao from "./onboarding/PassoConfiguracao";
+import PassoResumo from "./onboarding/PassoResumo";
 
-// Assistente de configuração inicial (escolha do vestibular → pesos/rotina →
-// revisão e salvamento do cronograma). Encapsula os 3 passos e avisa o App
-// quando o cronograma é salvo, via onConcluir().
+// Assistente de configuração inicial (vestibular → rotina/pesos → resumo e
+// salvamento do cronograma). Guarda os dados de cada passo em `dados`, o que
+// permite voltar sem perder o que já foi preenchido.
 export default function Onboarding({ onConcluir }) {
   const [step, setStep] = useState(1);
-  const [dados, setDados] = useState({});
+  const [dados, setDados] = useState({ vestibular: "ENEM" });
 
-  function handleNext(info) {
-    // O passo 1 envia uma string (vestibular) e o passo 2 envia um objeto
-    // ({ cronograma }). Só mesclamos objetos ao estado.
+  const avancar = (info) => {
     if (info && typeof info === "object") {
       setDados((prev) => ({ ...prev, ...info }));
     }
-    setStep((s) => s + 1);
-  }
+    setStep((s) => Math.min(3, s + 1));
+  };
+
+  const voltar = () => setStep((s) => Math.max(1, s - 1));
 
   return (
-    <>
-      {step === 1 && <StepVestibular onNext={handleNext} />}
-      {step === 2 && <StepVestibular2 onNext={handleNext} />}
-      {step === 3 && (
-        <StepVestibular3 cronograma={dados.cronograma} onSaveSuccess={onConcluir} />
+    <AnimatePresence mode="wait">
+      {step === 1 && (
+        <PassoVestibular key="p1" inicial={dados.vestibular} onNext={avancar} />
       )}
-    </>
+      {step === 2 && (
+        <PassoConfiguracao key="p2" inicial={dados} onNext={avancar} onBack={voltar} />
+      )}
+      {step === 3 && (
+        <PassoResumo
+          key="p3"
+          cronograma={dados.cronograma}
+          onBack={voltar}
+          onSaveSuccess={onConcluir}
+        />
+      )}
+    </AnimatePresence>
   );
 }
