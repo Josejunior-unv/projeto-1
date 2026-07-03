@@ -209,8 +209,11 @@ Sempre preserve funcionalidades existentes antes de adicionar novas.
 - ⚠️ Deploy é **Linux (case-sensitive)**: nomes de arquivo e imports precisam bater exatamente na caixa (maiúsc/minúsc), senão o build quebra só em produção.
 
 ## Autenticação / cargos
-- **Cadastro é sempre `aluno`** (`login.jsx`): o signUp nunca grava cargo; `App.jsx` assume `'aluno'` quando não há linha em `profiles`.
-- **Admin é manual:** inserir/editar linha em `profiles` com `cargo = 'admin'` (via Supabase). Não há promoção de admin pela UI.
+- **Cadastro é sempre `aluno`** (`login.jsx`): o signUp nunca grava cargo; `App.jsx` assume `'aluno'` quando não há linha em `profiles`. O **nome** do cadastro vai pra `auth.users.raw_user_meta_data->>'nome'` (não fica em `profiles`).
+- **Promoção de cargo pela UI (jul/2026):** o admin troca `aluno ⇄ admin` de qualquer pessoa pela aba **👥 Usuários** do Painel do Admin (`GerenciarUsuarios.jsx`). Ainda dá pra editar `profiles` na mão via Supabase, mas não é mais necessário.
+  - A tela usa 2 funções **SECURITY DEFINER** no Postgres (parte 6 do `supabase_migration.sql`): `admin_listar_usuarios()` (junta `auth.users` + `profiles` p/ trazer nome/e-mail/cargo) e `admin_definir_cargo(alvo, novo_cargo)`. Ambas checam **por dentro** se `auth.uid()` é admin — aluno não consegue chamar. `definir_cargo` faz `upsert` em `profiles` e **bloqueia o admin de rebaixar a si mesmo** (evita ficar sem admin).
+  - ⚠️ Essas funções precisam existir no banco; se a aba mostrar erro de carregamento, faltou rodar a parte 6 do migration.
+  - Testado end-to-end (jul/2026): login → listar → trava de auto-rebaixamento → trocar cargo de terceiro (round-trip). Tudo OK. **Os vários `admin` na lista são os professores — é intencional.**
 - **Confirm email** está DESLIGADO no Supabase (bom para testes; religar + configurar SMTP/Resend antes de divulgar pra público real). O serviço de e-mail embutido do Supabase é limitado (~2–4/hora).
 
 ## Estrutura de componentes
@@ -220,9 +223,11 @@ Sempre preserve funcionalidades existentes antes de adicionar novas.
 - `components/simulado/` — `Simulado.jsx` (config→execução→resultado) + `simuladosService.js` (histórico/ranking/conquistas/metas em **localStorage**).
 - `components/onboarding/` — `OnboardingLayout` (stepper) + `PassoVestibular/PassoConfiguracao/PassoResumo`; orquestrado por `Onboarding.jsx`. Cálculo em `logica.js`.
 - `estatisticas.jsx` (dashboard) + `estatisticas.js` (processamento/persistência).
+- `PainelAdmin.jsx` — casca do admin, com 3 seções (state `admin_secao` persistido): **📚 Materiais**, **📰 Notícias** (`GerenciarNoticias.jsx`) e **👥 Usuários** (`GerenciarUsuarios.jsx`). Só quem tem `cargo='admin'` chega aqui (guard em `App.jsx`, rota `/admin`).
 
 ## Persistência (tabelas Supabase)
-- `profiles` (user_id, cargo), `cronogramas` (user_id, dados_cronograma), `materiais_estudo`, `tarefas_status`, `noticias`.
+- `profiles` (user_id [PK], cargo), `cronogramas` (user_id, dados_cronograma), `materiais_estudo`, `tarefas_status`, `noticias`.
+- Funções RPC de admin: `admin_listar_usuarios()`, `admin_definir_cargo(uuid, text)` — ver "Autenticação / cargos". Definidas na parte 6 do `supabase_migration.sql` (idempotente; roda no SQL Editor).
 - `questoes_respondidas` (usuario_id, acertou, materia, data) — **fonte das Estatísticas**. ENEM e Simulado gravam aqui via `registrarRespostaEnem`, então o dashboard reflete tudo automaticamente.
 - Simulado (histórico/ranking/metas) fica em **localStorage** — evolução futura: espelhar em tabela `simulados`.
 
