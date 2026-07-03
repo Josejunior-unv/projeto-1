@@ -803,6 +803,24 @@ export default function Simulado({ userId }) {
           ))}
         </div>
 
+        {/* Aviso: integração com as Estatísticas */}
+        {userId && r.acertos + r.erros > 0 && (
+          <div className="flex items-start gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm mb-6">
+            <span className="text-lg leading-none">📊</span>
+            <p className="leading-relaxed">
+              <span className="font-semibold">Desempenho registrado nas suas Estatísticas.</span>{" "}
+              As {r.acertos + r.erros} questões respondidas já contam no seu
+              desempenho por matéria (aba Estatísticas).
+              {r.emBranco > 0 && (
+                <span className="text-emerald-400/70">
+                  {" "}
+                  Questões em branco ({r.emBranco}) não são contabilizadas.
+                </span>
+              )}
+            </p>
+          </div>
+        )}
+
         {/* Desempenho por matéria neste simulado */}
         {r.porMateriaArr.length > 0 && (
           <div className="p-6 rounded-2xl bg-gray-900/60 border border-gray-800 mb-6">
