@@ -9,6 +9,7 @@ import NoticiasDestaque from "./NoticiasDestaque";
 // ENEM e Estatísticas (que traz recharts) — só são baixadas quando abertas.
 const QuestoesEnem = lazy(() => import("./QuestoesEnem"));
 const Estatisticas = lazy(() => import("./estatisticas.jsx"));
+const Simulado = lazy(() => import("./simulado/Simulado.jsx"));
 
 const Carregando = ({ texto = "Carregando..." }) => (
   <div className="mt-8 text-center text-gray-500 animate-pulse">{texto}</div>
@@ -167,17 +168,9 @@ function InterfaceBase({ cronograma, userId, onLogout }) {
 
       case "simulados":
         return (
-          <div className="max-w-3xl">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-100">
-              Simulados
-            </h1>
-            <p className="text-sm text-gray-400 mt-1">
-              Acompanhe seu desempenho nos simulados.
-            </p>
-            <div className="mt-8 p-6 bg-gray-900/50 border border-gray-800 rounded-xl text-center text-gray-500 shadow-inner">
-              📝 Em breve: seus simulados e notas!
-            </div>
-          </div>
+          <Suspense fallback={<Carregando texto="Carregando simulados..." />}>
+            <Simulado userId={userId} />
+          </Suspense>
         );
 
       case "enem":
@@ -246,9 +239,9 @@ function InterfaceBase({ cronograma, userId, onLogout }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-950 text-white font-sans selection:bg-blue-500 selection:text-white">
-      {/* SIDEBAR — DESKTOP */}
-      <aside className="hidden lg:flex w-64 bg-gray-900 border-r border-gray-800 p-6 flex-col justify-between shrink-0">
+    <div className="flex h-screen overflow-hidden bg-gray-950 text-white font-sans selection:bg-blue-500 selection:text-white">
+      {/* SIDEBAR — DESKTOP (fixa: acompanha a rolagem do conteúdo) */}
+      <aside className="hidden lg:flex w-64 bg-gray-900 border-r border-gray-800 p-6 flex-col justify-between shrink-0 overflow-y-auto">
         <ConteudoSidebar
           abaAtiva={abaAtiva}
           onSelecionar={selecionarAba}
@@ -303,7 +296,7 @@ function InterfaceBase({ cronograma, userId, onLogout }) {
           <span className="font-semibold text-gray-100 truncate">{tituloAba}</span>
         </header>
 
-        <main className="flex-1 p-5 sm:p-8 lg:p-10 overflow-y-auto">
+        <main className="flex-1 min-h-0 p-5 sm:p-8 lg:p-10 overflow-y-auto">
           <AnimatePresence mode="wait">
             <motion.div
               key={abaAtiva}
