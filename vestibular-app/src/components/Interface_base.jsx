@@ -1,55 +1,128 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "../SUPABASE";
+import {
+  LayoutDashboard,
+  ListChecks,
+  Timer,
+  GraduationCap,
+  Library,
+  BarChart3,
+  LogOut,
+  Flame,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Loader2,
+} from "lucide-react";
 import TarefasFeitas from "./Tarefas_Feitas";
-import NoticiasDestaque from "./NoticiasDestaque";
+import Home from "./Home";
+import { usePersistedState } from "../hooks/usePersistedState";
 
 // Carregamento sob demanda (code-splitting): as abas mais pesadas — Questões do
-// ENEM e Estatísticas (que traz recharts) — só são baixadas quando abertas.
+// ENEM, Estatísticas (recharts), Simulado e a Biblioteca — só são baixadas
+// quando abertas.
 const QuestoesEnem = lazy(() => import("./QuestoesEnem"));
 const Estatisticas = lazy(() => import("./estatisticas.jsx"));
 const Simulado = lazy(() => import("./simulado/Simulado.jsx"));
+const BibliotecaProvas = lazy(() => import("./BibliotecaProvas.jsx"));
 
 const Carregando = ({ texto = "Carregando..." }) => (
-  <div className="mt-8 text-center text-gray-500 animate-pulse">{texto}</div>
+  <div className="mt-16 flex flex-col items-center gap-3 text-ink-400">
+    <Loader2 size={22} className="animate-spin text-gold-400" />
+    <span className="text-sm">{texto}</span>
+  </div>
 );
 
 const MENU = [
-  { aba: "cronograma", icone: "📊", label: "Meu Cronograma" },
-  { aba: "tarefas", icone: "✅", label: "Minhas Tarefas" },
-  { aba: "simulados", icone: "📝", label: "Simulados & Notas" },
-  { aba: "enem", icone: "🎓", label: "Questões do ENEM" },
-  { aba: "materiais", icone: "📂", label: "Materiais de Apoio" },
-  { aba: "estatisticas", icone: "📈", label: "Estatísticas" },
+  { aba: "cronograma", icone: LayoutDashboard, label: "Início" },
+  { aba: "tarefas", icone: ListChecks, label: "Minhas Tarefas" },
+  { aba: "simulados", icone: Timer, label: "Simulados" },
+  { aba: "enem", icone: GraduationCap, label: "Questões ENEM" },
+  { aba: "materiais", icone: Library, label: "Biblioteca UERJ" },
+  { aba: "estatisticas", icone: BarChart3, label: "Estatísticas" },
 ];
 
-const BotaoMenu = ({ ativo, onClick, icone, label }) => (
+const BotaoMenu = ({ ativo, onClick, icone: Icone, label, recolhida }) => (
   <button
     type="button"
     onClick={onClick}
     aria-pressed={ativo}
-    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold
-                transform transition-all duration-300 ease-in-out active:scale-95 hover:scale-[1.02] ${
+    title={recolhida ? label : undefined}
+    className={`relative w-full flex items-center gap-3 rounded-xl text-sm font-semibold
+                transition-colors duration-200 active:scale-[0.98] ${
+                  recolhida ? "justify-center px-0 py-3" : "px-3.5 py-2.5"
+                } ${
                   ativo
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-bold"
-                    : "text-gray-400 hover:bg-gray-800 hover:text-gray-200"
+                    ? "text-gold-300"
+                    : "text-ink-400 hover:text-ink-100 hover:bg-white/[0.04]"
                 }`}
   >
-    <span className="text-base">{icone}</span> {label}
+    {ativo && (
+      <motion.span
+        layoutId="menu-ativo"
+        className="absolute inset-0 rounded-xl bg-gold-400/10 border border-gold-400/20"
+        transition={{ type: "spring", stiffness: 420, damping: 34 }}
+      />
+    )}
+    <Icone size={18} strokeWidth={2} className="relative z-10 shrink-0" />
+    {!recolhida && <span className="relative z-10 truncate">{label}</span>}
   </button>
 );
 
-const ConteudoSidebar = ({ abaAtiva, onSelecionar, onLogout }) => (
+const ConteudoSidebar = ({
+  abaAtiva,
+  onSelecionar,
+  onLogout,
+  recolhida = false,
+  onAlternarRecolhida,
+}) => (
   <div className="flex flex-col h-full">
-    <div className="flex items-center gap-2 mb-8 px-2 cursor-default group">
-      <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.7)] group-hover:scale-125 transition-all duration-300"></span>
-      <span className="font-bold text-xl tracking-wide bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-        Portal do Estudante
-      </span>
+    {/* Marca */}
+    <div
+      className={`flex items-center mb-8 ${
+        recolhida ? "justify-center" : "justify-between px-1"
+      }`}
+    >
+      <div className="flex items-center gap-2.5 cursor-default min-w-0">
+        <span className="w-9 h-9 shrink-0 rounded-xl bg-gold-400 text-ink-950 flex items-center justify-center shadow-[var(--shadow-gold)]">
+          <Flame size={18} strokeWidth={2.5} />
+        </span>
+        {!recolhida && (
+          <div className="min-w-0 leading-tight">
+            <p className="font-display font-black text-white text-sm tracking-tight truncate">
+              UERJ Para Todos
+            </p>
+            <p className="text-[10px] uppercase tracking-widest text-ink-500 font-semibold">
+              Pré-Vestibular
+            </p>
+          </div>
+        )}
+      </div>
+      {!recolhida && onAlternarRecolhida && (
+        <button
+          type="button"
+          onClick={onAlternarRecolhida}
+          title="Recolher menu"
+          className="p-1.5 rounded-lg text-ink-500 hover:text-ink-200 hover:bg-white/[0.05] transition-colors"
+        >
+          <PanelLeftClose size={16} />
+        </button>
+      )}
     </div>
 
-    <nav className="space-y-2 flex-1">
+    {recolhida && onAlternarRecolhida && (
+      <button
+        type="button"
+        onClick={onAlternarRecolhida}
+        title="Expandir menu"
+        className="mb-4 mx-auto p-2 rounded-lg text-ink-500 hover:text-ink-200 hover:bg-white/[0.05] transition-colors"
+      >
+        <PanelLeftOpen size={16} />
+      </button>
+    )}
+
+    <nav className="space-y-1 flex-1">
       {MENU.map((item) => (
         <BotaoMenu
           key={item.aba}
@@ -57,6 +130,7 @@ const ConteudoSidebar = ({ abaAtiva, onSelecionar, onLogout }) => (
           onClick={() => onSelecionar(item.aba)}
           icone={item.icone}
           label={item.label}
+          recolhida={recolhida}
         />
       ))}
     </nav>
@@ -64,9 +138,14 @@ const ConteudoSidebar = ({ abaAtiva, onSelecionar, onLogout }) => (
     <button
       type="button"
       onClick={onLogout}
-      className="mt-6 w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all active:scale-95"
+      title={recolhida ? "Sair da conta" : undefined}
+      className={`mt-6 w-full flex items-center gap-3 rounded-xl text-sm font-semibold text-ink-400
+                  hover:bg-rose-500/10 hover:text-rose-300 transition-colors duration-200 active:scale-[0.98] ${
+                    recolhida ? "justify-center px-0 py-3" : "px-3.5 py-2.5"
+                  }`}
     >
-      <span className="text-base">🚪</span> Sair da Conta
+      <LogOut size={18} strokeWidth={2} className="shrink-0" />
+      {!recolhida && "Sair da conta"}
     </button>
   </div>
 );
@@ -76,36 +155,11 @@ function InterfaceBase({ cronograma, userId, onLogout }) {
   const navigate = useNavigate();
   const abaAtiva = MENU.some((m) => m.aba === aba) ? aba : "cronograma";
   const [drawerAberto, setDrawerAberto] = useState(false);
-  const [materiais, setMateriais] = useState([]);
+  const [sidebarRecolhida, setSidebarRecolhida] = usePersistedState(
+    "sidebar_recolhida",
+    false,
+  );
   const listaCronograma = Array.isArray(cronograma) ? cronograma : [];
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function carregarMateriais() {
-      const { data } = await supabase.from("materiais_estudo").select("*");
-      if (isMounted && data) setMateriais(data);
-    }
-    carregarMateriais();
-
-    const canal = supabase
-      .channel("materiais_canal")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "materiais_estudo" },
-        (payload) => setMateriais((prev) => [...prev, payload.new]),
-      )
-      .subscribe();
-
-    return () => {
-      isMounted = false;
-      if (canal && typeof canal.unsubscribe === "function") {
-        canal.unsubscribe();
-      } else if (canal) {
-        supabase.removeChannel?.(canal);
-      }
-    };
-  }, []);
 
   const selecionarAba = (novaAba) => {
     navigate(`/app/${novaAba}`);
@@ -118,49 +172,11 @@ function InterfaceBase({ cronograma, userId, onLogout }) {
     switch (abaAtiva) {
       case "cronograma":
         return (
-          <div className="max-w-3xl">
-            <NoticiasDestaque />
-            <div className="mb-6 cursor-default">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-100">
-                Meu Planejamento Semanal
-              </h1>
-              <p className="text-sm text-gray-400 mt-1">
-                Sua divisão de carga horária ideal para as disciplinas do
-                vestibular.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {listaCronograma.map((materia) => {
-                const horasNum = Number.parseFloat(materia.horas) || 0;
-                const pct = Math.min(100, (horasNum / 15) * 100);
-                return (
-                  <div
-                    key={materia.id ?? materia.nome}
-                    className="bg-gray-900 bg-opacity-60 p-5 rounded-xl border border-gray-800
-                               transform transition-all duration-300 ease-in-out
-                               hover:scale-[1.03] hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/5 group"
-                  >
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="font-semibold text-lg text-gray-200 group-hover:text-white transition-colors duration-300">
-                        {materia.nome}
-                      </span>
-                      <span className="text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-md transform transition-all duration-300 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-105">
-                        {materia.horas}h / ciclo
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
-                      <motion.div
-                        className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${pct}%` }}
-                        transition={{ duration: 0.6, ease: "easeOut" }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <Home
+            cronograma={listaCronograma}
+            userId={userId}
+            aoNavegar={selecionarAba}
+          />
         );
 
       case "tarefas":
@@ -177,12 +193,12 @@ function InterfaceBase({ cronograma, userId, onLogout }) {
         return (
           <div className="max-w-3xl">
             <div className="mb-6 cursor-default">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-100">
+              <h1 className="text-2xl sm:text-[28px] font-black text-white tracking-tight font-display">
                 Banco de Questões ENEM
               </h1>
-              <p className="text-sm text-gray-400 mt-1">
-                Treine seus conhecimentos com o banco de dados oficial da
-                comunidade.
+              <p className="text-sm text-ink-400 mt-1.5">
+                Treine com as provas oficiais — correção e estatísticas
+                automáticas.
               </p>
             </div>
             <Suspense fallback={<Carregando texto="Carregando questões..." />}>
@@ -193,37 +209,9 @@ function InterfaceBase({ cronograma, userId, onLogout }) {
 
       case "materiais":
         return (
-          <div className="max-w-3xl">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-100 mb-2">
-              Materiais de Apoio
-            </h1>
-            <p className="text-sm text-gray-400 mb-8">
-              Arquivos e links disponibilizados para seus estudos.
-            </p>
-            <div className="grid gap-4">
-              {(materiais || []).map((m) => (
-                <a
-                  key={m.id}
-                  href={m.url_arquivo}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-gray-900/60 p-5 rounded-xl border border-gray-800 hover:border-blue-500/50 hover:bg-gray-800 transition-all group flex justify-between items-center"
-                >
-                  <span className="font-semibold text-gray-200 group-hover:text-white">
-                    {m.titulo}
-                  </span>
-                  <span className="text-xs font-bold bg-blue-500/10 text-blue-400 px-3 py-1.5 rounded-md border border-blue-500/20 group-hover:bg-blue-600 group-hover:text-white">
-                    Abrir
-                  </span>
-                </a>
-              ))}
-              {(!materiais || materiais.length === 0) && (
-                <div className="p-8 rounded-xl border border-dashed border-gray-800 text-center text-gray-500">
-                  Nenhum material de apoio disponível ainda.
-                </div>
-              )}
-            </div>
-          </div>
+          <Suspense fallback={<Carregando texto="Abrindo a biblioteca..." />}>
+            <BibliotecaProvas />
+          </Suspense>
         );
 
       case "estatisticas":
@@ -239,13 +227,20 @@ function InterfaceBase({ cronograma, userId, onLogout }) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-950 text-white font-sans selection:bg-blue-500 selection:text-white">
+    <div className="flex h-screen overflow-hidden bg-ink-950 text-ink-100">
       {/* SIDEBAR — DESKTOP (fixa: acompanha a rolagem do conteúdo) */}
-      <aside className="hidden lg:flex w-64 bg-gray-900 border-r border-gray-800 p-6 flex-col justify-between shrink-0 overflow-y-auto">
+      <aside
+        className={`hidden lg:flex bg-ink-900 border-r border-white/[0.06] p-4 flex-col shrink-0 overflow-y-auto overflow-x-hidden
+                    transition-[width] duration-300 ease-in-out ${
+                      sidebarRecolhida ? "w-[76px]" : "w-64"
+                    }`}
+      >
         <ConteudoSidebar
           abaAtiva={abaAtiva}
           onSelecionar={selecionarAba}
           onLogout={onLogout}
+          recolhida={sidebarRecolhida}
+          onAlternarRecolhida={() => setSidebarRecolhida((v) => !v)}
         />
       </aside>
 
@@ -254,18 +249,18 @@ function InterfaceBase({ cronograma, userId, onLogout }) {
         {drawerAberto && (
           <>
             <motion.div
-              className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setDrawerAberto(false)}
             />
             <motion.aside
-              className="fixed top-0 left-0 bottom-0 w-72 max-w-[80%] bg-gray-900 border-r border-gray-800 p-6 z-50 lg:hidden overflow-y-auto"
+              className="fixed top-0 left-0 bottom-0 w-72 max-w-[80%] bg-ink-900 border-r border-white/[0.06] p-5 z-50 lg:hidden overflow-y-auto"
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
-              transition={{ type: "tween", duration: 0.25 }}
+              transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}
             >
               <ConteudoSidebar
                 abaAtiva={abaAtiva}
@@ -278,22 +273,18 @@ function InterfaceBase({ cronograma, userId, onLogout }) {
       </AnimatePresence>
 
       {/* CONTEÚDO PRINCIPAL */}
-      <div className="flex-1 min-w-0 flex flex-col bg-gradient-to-br from-gray-950 via-gray-950 to-gray-900">
+      <div className="flex-1 min-w-0 flex flex-col">
         {/* Top bar mobile */}
-        <header className="lg:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 bg-gray-900/80 backdrop-blur-md border-b border-gray-800">
+        <header className="lg:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 bg-ink-900/80 backdrop-blur-md border-b border-white/[0.06]">
           <button
             type="button"
             onClick={() => setDrawerAberto(true)}
             aria-label="Abrir menu"
-            className="p-2 rounded-lg text-gray-300 hover:bg-gray-800 active:scale-95 transition"
+            className="p-2 rounded-lg text-ink-200 hover:bg-white/[0.06] active:scale-95 transition"
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
+            <Menu size={20} />
           </button>
-          <span className="font-semibold text-gray-100 truncate">{tituloAba}</span>
+          <span className="font-semibold text-white truncate">{tituloAba}</span>
         </header>
 
         <main className="flex-1 min-h-0 p-5 sm:p-8 lg:p-10 overflow-y-auto">
@@ -303,7 +294,7 @@ function InterfaceBase({ cronograma, userId, onLogout }) {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
             >
               {renderConteudo()}
             </motion.div>

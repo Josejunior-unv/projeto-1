@@ -117,7 +117,7 @@ export const coresDe = (cor) => CORES_MATERIA[cor] || CORES_MATERIA.blue;
 
 // Prioridades das notícias do mural do administrador.
 export const PRIORIDADES = [
-  { valor: 0, label: "Normal", icone: "•", classe: "text-slate-400 bg-slate-500/10" },
+  { valor: 0, label: "Normal", icone: "•", classe: "text-ink-400 bg-ink-500/10" },
   { valor: 1, label: "Alta", icone: "▲", classe: "text-amber-400 bg-amber-500/10" },
   { valor: 2, label: "Urgente", icone: "🔥", classe: "text-rose-400 bg-rose-500/10" },
 ];

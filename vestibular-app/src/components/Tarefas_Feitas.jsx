@@ -1,5 +1,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  ArrowLeft,
+  Check,
+  Calendar,
+  User,
+  Download,
+  FileText,
+  PlayCircle,
+  Link2,
+  Inbox,
+} from "lucide-react";
 import { supabase } from "../SUPABASE";
 import { MATERIAS, TIPOS_MATERIAL, coresDe } from "../constants/materias";
 import { listarMateriais } from "./materiaisService";
@@ -8,6 +19,8 @@ import {
   definirConcluida,
 } from "./tarefasStatusService";
 import { usePersistedState } from "../hooks/usePersistedState";
+import { Botao, Selo, EstadoVazio, Esqueleto, BarraProgresso, CabecalhoPagina } from "./ui";
+import { cx } from "./ui/cx";
 
 const formatarData = (iso) => {
   if (!iso) return "";
@@ -27,12 +40,13 @@ const infoMateria = (nome) =>
 const infoTipo = (id) =>
   TIPOS_MATERIAL.find((t) => t.id === id) || { label: "Material", icone: "📎" };
 
-function acaoDoTipo(tipo) {
-  if (tipo === "pdf") return { texto: "Abrir PDF", icone: "📄" };
-  if (tipo === "video") return { texto: "Assistir vídeo", icone: "▶" };
-  if (tipo === "link") return { texto: "Abrir link", icone: "🔗" };
-  return null;
-}
+// Ícones estáticos por tipo (fora do render).
+const ICONE_ACAO = { pdf: FileText, video: PlayCircle, link: Link2 };
+const TEXTO_ACAO = {
+  pdf: "Abrir PDF",
+  video: "Assistir vídeo",
+  link: "Abrir link",
+};
 
 export default function TarefasFeitas({ userId }) {
   const [materiais, setMateriais] = useState([]);
@@ -106,35 +120,29 @@ export default function TarefasFeitas({ userId }) {
 
   return (
     <div className="w-full max-w-5xl mx-auto">
-      <div className="mb-6">
-        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-1">
-          Minhas Tarefas
-        </h2>
-        <p className="text-slate-400">
-          {materiaAberta
+      <CabecalhoPagina
+        titulo="Minhas Tarefas"
+        descricao={
+          materiaAberta
             ? "Marque cada item conforme for concluindo."
-            : "Escolha uma matéria para ver seus materiais e tarefas."}
-        </p>
-      </div>
+            : "Escolha uma matéria para ver seus materiais e tarefas."
+        }
+        className="mb-6"
+      />
 
       {/* SKELETON */}
       {carregando ? (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div
-              key={i}
-              className="h-40 rounded-3xl bg-slate-900/50 border border-slate-800 animate-pulse"
-            />
+            <Esqueleto key={i} className="h-44 rounded-3xl" />
           ))}
         </div>
       ) : pastas.length === 0 ? (
-        <div className="p-12 rounded-3xl border border-dashed border-slate-800 text-center">
-          <div className="text-5xl mb-3">📭</div>
-          <p className="text-slate-300 font-semibold">Nenhuma tarefa por aqui</p>
-          <p className="text-slate-500 text-sm mt-1">
-            Quando um professor publicar um material, ele aparece aqui.
-          </p>
-        </div>
+        <EstadoVazio
+          icone={Inbox}
+          titulo="Nenhuma tarefa por aqui"
+          descricao="Quando um professor publicar um material, ele aparece aqui."
+        />
       ) : (
         <AnimatePresence mode="wait">
           {!materiaAberta ? (
@@ -159,40 +167,46 @@ export default function TarefasFeitas({ userId }) {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: Math.min(index * 0.04, 0.3) }}
                     whileTap={{ scale: 0.97 }}
-                    className={`group relative overflow-hidden text-left p-5 rounded-3xl bg-gradient-to-br from-slate-900/80 to-slate-900/40 backdrop-blur-sm border ${c.borda} ${c.hover} transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/40`}
+                    className={cx(
+                      "group relative overflow-hidden text-left p-5 rounded-3xl bg-ink-900 border shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1",
+                      c.borda,
+                      c.hover,
+                    )}
                   >
                     {/* brilho no hover */}
                     <div
-                      className={`absolute -top-10 -right-10 w-24 h-24 rounded-full ${c.fundo} blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                      className={cx(
+                        "absolute -top-10 -right-10 w-24 h-24 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300",
+                        c.fundo,
+                      )}
                     />
                     <div className="relative">
-                      <div className="flex items-center justify-between mb-4">
-                        <div
-                          className={`w-14 h-14 rounded-2xl ${c.fundo} flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-300`}
-                        >
-                          📁
-                        </div>
-                        <span className="text-2xl opacity-70">{m.icone}</span>
+                      <div
+                        className={cx(
+                          "w-13 h-13 p-3 mb-4 inline-flex items-center justify-center rounded-2xl text-2xl transition-transform duration-300 group-hover:scale-110",
+                          c.fundo,
+                        )}
+                      >
+                        {m.icone}
                       </div>
                       <h3 className="font-bold text-white text-lg leading-tight">
                         {m.nome}
                       </h3>
                       <div className="flex items-center gap-2 mt-1 text-xs">
-                        <span className="text-slate-400">
+                        <span className="text-ink-400">
                           {g.total} {g.total === 1 ? "item" : "itens"}
                         </span>
-                        <span className="text-slate-600">·</span>
-                        <span className={`font-bold ${c.texto}`}>{pct}%</span>
+                        <span className="text-ink-600">·</span>
+                        <span className={cx("font-bold tabular-nums", c.texto)}>
+                          {pct}%
+                        </span>
                       </div>
-                      <div className="mt-3 w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                        <motion.div
-                          className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full"
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
-                          transition={{ duration: 0.6, ease: "easeOut" }}
-                        />
-                      </div>
-                      <p className="text-[11px] text-slate-600 mt-2">
+                      <BarraProgresso
+                        valor={pct}
+                        cor="bg-emerald-400"
+                        className="mt-3"
+                      />
+                      <p className="text-[11px] text-ink-500 mt-2 tabular-nums">
                         {g.feitas}/{g.total} · {formatarData(g.ultima)}
                       </p>
                     </div>
@@ -211,9 +225,9 @@ export default function TarefasFeitas({ userId }) {
             >
               <button
                 onClick={() => setMateriaAberta(null)}
-                className="inline-flex items-center gap-2 text-slate-400 hover:text-white font-semibold mb-5 transition"
+                className="inline-flex items-center gap-2 text-ink-400 hover:text-white text-sm font-semibold mb-5 transition-colors"
               >
-                <span>←</span> Voltar às matérias
+                <ArrowLeft size={16} /> Voltar às matérias
               </button>
 
               {(() => {
@@ -225,7 +239,10 @@ export default function TarefasFeitas({ userId }) {
                   <>
                     <div className="flex items-center gap-3 mb-5">
                       <span
-                        className={`w-12 h-12 flex items-center justify-center rounded-2xl text-2xl ${c.fundo}`}
+                        className={cx(
+                          "w-12 h-12 flex items-center justify-center rounded-2xl text-2xl",
+                          c.fundo,
+                        )}
                       >
                         {mat.icone}
                       </span>
@@ -233,7 +250,7 @@ export default function TarefasFeitas({ userId }) {
                         <h3 className="text-xl font-black text-white">
                           {materiaAberta}
                         </h3>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-ink-500 tabular-nums">
                           {g.feitas}/{g.total} concluído
                           {g.feitas === 1 ? "" : "s"}
                         </p>
@@ -244,7 +261,7 @@ export default function TarefasFeitas({ userId }) {
                       {g.itens.map((m) => {
                         const tipo = infoTipo(m.tipo);
                         const feita = !!concluidas[m.id];
-                        const acao = acaoDoTipo(m.tipo);
+                        const IconeAcao = ICONE_ACAO[m.tipo];
                         const temLink = !!m.url_arquivo;
                         return (
                           <motion.li
@@ -252,11 +269,12 @@ export default function TarefasFeitas({ userId }) {
                             layout
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className={`p-4 sm:p-5 rounded-2xl border transition-all ${
+                            className={cx(
+                              "p-4 sm:p-5 rounded-2xl border transition-all",
                               feita
                                 ? "bg-emerald-500/[0.04] border-emerald-500/30"
-                                : "bg-slate-900/50 border-slate-800 hover:border-slate-700"
-                            }`}
+                                : "bg-ink-900 border-white/[0.06] hover:border-white/[0.12]",
+                            )}
                           >
                             <div className="flex items-start gap-3">
                               {/* Checkbox */}
@@ -266,19 +284,19 @@ export default function TarefasFeitas({ userId }) {
                                 title={
                                   feita ? "Marcar como pendente" : "Concluir"
                                 }
-                                className={`mt-0.5 w-6 h-6 shrink-0 rounded-lg border-2 flex items-center justify-center transition-all active:scale-90 ${
+                                className={cx(
+                                  "mt-0.5 w-6 h-6 shrink-0 rounded-lg border-2 flex items-center justify-center transition-all active:scale-90",
                                   feita
                                     ? "bg-emerald-500 border-emerald-500 text-white"
-                                    : "border-slate-600 hover:border-emerald-400"
-                                }`}
+                                    : "border-ink-600 hover:border-emerald-400",
+                                )}
                               >
                                 {feita && (
                                   <motion.span
                                     initial={{ scale: 0 }}
                                     animate={{ scale: 1 }}
-                                    className="text-sm font-bold"
                                   >
-                                    ✓
+                                    <Check size={14} strokeWidth={3} />
                                   </motion.span>
                                 )}
                               </button>
@@ -286,60 +304,63 @@ export default function TarefasFeitas({ userId }) {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <h4
-                                    className={`font-bold ${
+                                    className={cx(
+                                      "font-bold",
                                       feita
-                                        ? "text-slate-400 line-through"
-                                        : "text-white"
-                                    }`}
+                                        ? "text-ink-400 line-through"
+                                        : "text-white",
+                                    )}
                                   >
                                     {m.titulo}
                                   </h4>
-                                  <span className="flex items-center gap-1 text-[10px] uppercase font-bold tracking-wide bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md">
-                                    <span>{tipo.icone}</span>
+                                  <Selo className="uppercase text-[10px]">
                                     {tipo.label}
-                                  </span>
+                                  </Selo>
                                 </div>
 
                                 {m.descricao && (
-                                  <p className="text-sm text-slate-400 mt-1 leading-6">
+                                  <p className="text-sm text-ink-400 mt-1 leading-6">
                                     {m.descricao}
                                   </p>
                                 )}
 
-                                <div className="flex items-center gap-3 flex-wrap mt-2 text-xs text-slate-500">
+                                <div className="flex items-center gap-3 flex-wrap mt-2 text-xs text-ink-500">
                                   {m.professor_nome && (
-                                    <span className="capitalize">
-                                      👤 {m.professor_nome}
+                                    <span className="inline-flex items-center gap-1 capitalize">
+                                      <User size={12} /> {m.professor_nome}
                                     </span>
                                   )}
-                                  <span>📅 {formatarData(m.criado_em)}</span>
+                                  <span className="inline-flex items-center gap-1">
+                                    <Calendar size={12} />{" "}
+                                    {formatarData(m.criado_em)}
+                                  </span>
                                 </div>
 
                                 {temLink && (
                                   <div className="flex items-center gap-2 flex-wrap mt-3">
-                                    {acao && (
-                                      <a
+                                    {IconeAcao && (
+                                      <Botao
+                                        as="a"
                                         href={m.url_arquivo}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-bold text-white transition-all active:scale-95 ${
-                                          m.tipo === "pdf"
-                                            ? "bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500"
-                                            : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500"
-                                        }`}
+                                        variante="secundario"
+                                        tamanho="sm"
                                       >
-                                        <span>{acao.icone}</span>
-                                        {acao.texto}
-                                      </a>
+                                        <IconeAcao size={14} />
+                                        {TEXTO_ACAO[m.tipo]}
+                                      </Botao>
                                     )}
                                     {m.tipo === "pdf" && (
-                                      <a
+                                      <Botao
+                                        as="a"
                                         href={m.url_arquivo}
                                         download={m.arquivo_nome || true}
-                                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition active:scale-95"
+                                        variante="fantasma"
+                                        tamanho="sm"
                                       >
-                                        ⬇ Download
-                                      </a>
+                                        <Download size={14} /> Baixar
+                                      </Botao>
                                     )}
                                   </div>
                                 )}

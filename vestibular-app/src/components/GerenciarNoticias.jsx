@@ -174,7 +174,7 @@ export default function GerenciarNoticias({ autor }) {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         onSubmit={handleSubmit}
-        className="p-6 rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-purple-500/20 shadow-2xl h-fit"
+        className="p-6 rounded-3xl bg-ink-900/60 backdrop-blur-xl border border-gold-400/20 shadow-2xl h-fit"
       >
         <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2">
           📰 {editandoId ? "Editar notícia" : "Nova notícia"}
@@ -185,19 +185,19 @@ export default function GerenciarNoticias({ autor }) {
             value={form.titulo}
             onChange={(e) => set("titulo", e.target.value)}
             placeholder="Título"
-            className="bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
+            className="bg-ink-950/60 border border-ink-700 rounded-xl px-4 py-3 text-white placeholder:text-ink-600 focus:outline-none focus:border-gold-400/70 focus:ring-1 focus:ring-gold-400/40 transition"
           />
           <textarea
             value={form.descricao}
             onChange={(e) => set("descricao", e.target.value)}
             placeholder="Descrição / resumo"
             rows={3}
-            className="bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition resize-y"
+            className="bg-ink-950/60 border border-ink-700 rounded-xl px-4 py-3 text-white placeholder:text-ink-600 focus:outline-none focus:border-gold-400/70 focus:ring-1 focus:ring-gold-400/40 transition resize-y"
           />
 
           {/* Imagem (opcional) */}
-          <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/40 p-4">
-            <label className="text-xs font-semibold text-slate-400">
+          <div className="rounded-xl border border-dashed border-ink-700 bg-ink-950/40 p-4">
+            <label className="text-xs font-semibold text-ink-400">
               Imagem (opcional)
             </label>
             <input
@@ -205,17 +205,17 @@ export default function GerenciarNoticias({ autor }) {
               type="file"
               accept="image/*"
               onChange={(e) => setImagemFile(e.target.files?.[0] || null)}
-              className="mt-2 block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-purple-600 file:text-white hover:file:bg-purple-500 file:cursor-pointer cursor-pointer"
+              className="mt-2 block w-full text-sm text-ink-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-gold-400 file:text-ink-950 hover:file:bg-gold-300 file:cursor-pointer cursor-pointer"
             />
             {(imagemFile || form.imagem_url) && (
-              <p className="text-xs text-slate-500 mt-2 truncate">
+              <p className="text-xs text-ink-500 mt-2 truncate">
                 {imagemFile ? imagemFile.name : "Imagem atual mantida"}
               </p>
             )}
             {progresso !== null && (
-              <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mt-2">
+              <div className="w-full h-1.5 bg-ink-800 rounded-full overflow-hidden mt-2">
                 <motion.div
-                  className="h-full bg-purple-500"
+                  className="h-full bg-gold-400"
                   animate={{ width: `${progresso}%` }}
                 />
               </div>
@@ -226,14 +226,14 @@ export default function GerenciarNoticias({ autor }) {
             value={form.link}
             onChange={(e) => set("link", e.target.value)}
             placeholder="Link (opcional)"
-            className="bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
+            className="bg-ink-950/60 border border-ink-700 rounded-xl px-4 py-3 text-white placeholder:text-ink-600 focus:outline-none focus:border-gold-400/70 focus:ring-1 focus:ring-gold-400/40 transition"
           />
 
           <div className="flex gap-3 flex-wrap">
             <select
               value={form.prioridade}
               onChange={(e) => set("prioridade", e.target.value)}
-              className="flex-1 bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500 cursor-pointer"
+              className="flex-1 bg-ink-950/60 border border-ink-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-gold-400/70 cursor-pointer"
             >
               {PRIORIDADES.map((p) => (
                 <option key={p.valor} value={p.valor}>
@@ -245,16 +245,16 @@ export default function GerenciarNoticias({ autor }) {
               type="date"
               value={form.data_publicacao}
               onChange={(e) => set("data_publicacao", e.target.value)}
-              className="bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-3 text-slate-300 focus:outline-none focus:border-purple-500 cursor-pointer"
+              className="bg-ink-950/60 border border-ink-700 rounded-xl px-4 py-3 text-ink-300 focus:outline-none focus:border-gold-400/70 cursor-pointer"
             />
           </div>
 
-          <label className="flex items-center gap-3 text-sm text-slate-300 cursor-pointer select-none">
+          <label className="flex items-center gap-3 text-sm text-ink-300 cursor-pointer select-none">
             <button
               type="button"
               onClick={() => set("publicado", !form.publicado)}
               className={`relative w-11 h-6 rounded-full transition-colors ${
-                form.publicado ? "bg-emerald-500" : "bg-slate-700"
+                form.publicado ? "bg-emerald-500" : "bg-ink-700"
               }`}
             >
               <span
@@ -278,7 +278,7 @@ export default function GerenciarNoticias({ autor }) {
                   status.tipo === "sucesso" ? "text-emerald-400" : "text-rose-400"
                 }`}
               >
-                {status.tipo === "sucesso" ? "✅ " : "⚠️ "}
+                
                 {status.texto}
               </motion.span>
             )}
@@ -288,7 +288,7 @@ export default function GerenciarNoticias({ autor }) {
               <button
                 type="button"
                 onClick={limpar}
-                className="text-slate-400 hover:text-white font-bold py-3 px-5 rounded-xl border border-slate-700 transition active:scale-95"
+                className="text-ink-400 hover:text-white font-bold py-3 px-5 rounded-xl border border-ink-700 transition active:scale-95"
               >
                 Cancelar
               </button>
@@ -296,7 +296,7 @@ export default function GerenciarNoticias({ autor }) {
             <button
               type="submit"
               disabled={salvando}
-              className={`bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white font-bold py-3 px-7 rounded-xl transition-all shadow-lg shadow-purple-600/25 active:scale-95 ${
+              className={`bg-gold-400 hover:bg-gold-300 text-ink-950 font-bold py-3 px-7 rounded-xl transition-all shadow-[var(--shadow-gold)] active:scale-95 ${
                 salvando ? "opacity-60 cursor-wait" : ""
               }`}
             >
@@ -308,7 +308,7 @@ export default function GerenciarNoticias({ autor }) {
 
       {/* LISTA */}
       <div>
-        <h3 className="text-slate-400 font-semibold mb-3 px-1">
+        <h3 className="text-ink-400 font-semibold mb-3 px-1">
           Notícias ({noticias.length})
         </h3>
         {carregando ? (
@@ -316,12 +316,12 @@ export default function GerenciarNoticias({ autor }) {
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="h-24 rounded-2xl bg-slate-900/50 border border-slate-800 animate-pulse"
+                className="h-24 rounded-2xl bg-ink-900/50 border border-ink-800 animate-pulse"
               />
             ))}
           </div>
         ) : noticias.length === 0 ? (
-          <div className="p-8 rounded-2xl border border-dashed border-slate-800 text-center text-slate-500">
+          <div className="p-8 rounded-2xl border border-dashed border-ink-800 text-center text-ink-500">
             Nenhuma notícia ainda.
           </div>
         ) : (
@@ -336,8 +336,8 @@ export default function GerenciarNoticias({ autor }) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -20 }}
-                    className={`flex gap-3 p-4 rounded-2xl bg-slate-900/50 border transition group ${
-                      n.publicado ? "border-slate-800" : "border-slate-800 opacity-60"
+                    className={`flex gap-3 p-4 rounded-2xl bg-ink-900/50 border transition group ${
+                      n.publicado ? "border-ink-800" : "border-ink-800 opacity-60"
                     }`}
                   >
                     {n.imagem_url && (
@@ -345,7 +345,7 @@ export default function GerenciarNoticias({ autor }) {
                         src={n.imagem_url}
                         alt=""
                         loading="lazy"
-                        className="w-16 h-16 rounded-xl object-cover border border-slate-800 shrink-0"
+                        className="w-16 h-16 rounded-xl object-cover border border-ink-800 shrink-0"
                       />
                     )}
                     <div className="flex-1 min-w-0">
@@ -359,17 +359,17 @@ export default function GerenciarNoticias({ autor }) {
                           {prio.icone} {prio.label}
                         </span>
                         {!n.publicado && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-400">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-ink-800 text-ink-400">
                             oculta
                           </span>
                         )}
                       </div>
                       {n.descricao && (
-                        <p className="text-sm text-slate-400 mt-0.5 line-clamp-2">
+                        <p className="text-sm text-ink-400 mt-0.5 line-clamp-2">
                           {n.descricao}
                         </p>
                       )}
-                      <span className="text-xs text-slate-600">
+                      <span className="text-xs text-ink-600">
                         {formatarData(n.data_publicacao)}
                       </span>
                     </div>
@@ -377,21 +377,21 @@ export default function GerenciarNoticias({ autor }) {
                       <button
                         onClick={() => togglePublicado(n)}
                         title={n.publicado ? "Ocultar" : "Publicar"}
-                        className="text-slate-500 hover:text-emerald-400 p-1"
+                        className="text-ink-500 hover:text-emerald-400 p-1"
                       >
                         {n.publicado ? "🙈" : "👁"}
                       </button>
                       <button
                         onClick={() => editar(n)}
                         title="Editar"
-                        className="text-slate-500 hover:text-blue-400 p-1"
+                        className="text-ink-500 hover:text-gold-400 p-1"
                       >
                         ✏️
                       </button>
                       <button
                         onClick={() => excluir(n.id)}
                         title="Excluir"
-                        className="text-slate-500 hover:text-rose-400 p-1"
+                        className="text-ink-500 hover:text-rose-400 p-1"
                       >
                         🗑
                       </button>

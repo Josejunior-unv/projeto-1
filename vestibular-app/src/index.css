@@ -1,13 +1,90 @@
 @import "tailwindcss";
 
+/* ============================================================
+   DESIGN SYSTEM — UERJ Para Todos
+   Identidade extraída da logo: tinta (pretos profundos e quentes),
+   branco e ouro (o selo "PARA TODOS"). O ouro é a única cor de
+   marca; estados usam esmeralda (sucesso), rosa (erro) e âmbar
+   (aviso). Nada de azul genérico.
+   ============================================================ */
+
+@theme {
+  /* Tipografia: Archivo (display, condensada e pesada como a logo)
+     + Inter (texto corrido e UI). */
+  --font-display: "Archivo", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Tinta — escala de fundos (quente, sem puxar para o azul) */
+  --color-ink-950: #09090b;
+  --color-ink-900: #0e0e12;
+  --color-ink-850: #121217;
+  --color-ink-800: #17171d;
+  --color-ink-700: #24242c;
+  --color-ink-600: #32323c;
+  --color-ink-500: #4b4b57;
+  --color-ink-400: #71717e;
+  --color-ink-300: #9c9ca8;
+  --color-ink-200: #c6c6cf;
+  --color-ink-100: #e7e7ec;
+
+  /* Ouro — o selo da logo */
+  --color-gold-200: #ffedb0;
+  --color-gold-300: #ffdd70;
+  --color-gold-400: #f5c042;
+  --color-gold-500: #e3a81e;
+  --color-gold-600: #bd8a10;
+  --color-gold-700: #8f680c;
+
+  /* Sombras com a profundidade da marca */
+  --shadow-gold: 0 8px 24px -8px rgb(245 192 66 / 0.35);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+  --shadow-pop: 0 24px 60px -16px rgb(0 0 0 / 0.65);
+
+  --animate-brilho: brilho 2.4s ease-in-out infinite;
+
+  @keyframes brilho {
+    0%,
+    100% {
+      opacity: 0.5;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+}
+
 html {
   scroll-behavior: smooth;
 }
 
 body {
+  background-color: var(--color-ink-950);
+  color: var(--color-ink-100);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+/* Seleção de texto com a cor da marca */
+::selection {
+  background: var(--color-gold-400);
+  color: var(--color-ink-950);
+}
+
+/* Foco visível consistente em todo o app */
+:focus-visible {
+  outline: 2px solid var(--color-gold-400);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Títulos usam a família display por padrão */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
 }
 
 /* Scrollbar discreta e moderna (WebKit) */
@@ -19,13 +96,13 @@ body {
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
+  background: rgb(120 120 132 / 0.25);
   border-radius: 9999px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.45);
+  background: rgb(120 120 132 / 0.45);
   background-clip: padding-box;
 }
 

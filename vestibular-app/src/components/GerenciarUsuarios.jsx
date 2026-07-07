@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Users } from "lucide-react";
 import { supabase } from "../SUPABASE";
 
 const formatarData = (iso) => {
@@ -111,9 +112,9 @@ export default function GerenciarUsuarios() {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            👥 Usuários cadastrados
+            <Users size={19} className="text-gold-400" /> Usuários cadastrados
           </h2>
-          <p className="text-sm text-slate-400 mt-0.5">
+          <p className="text-sm text-ink-400 mt-0.5">
             {usuarios.length} conta{usuarios.length === 1 ? "" : "s"} ·{" "}
             {totalAdmins} admin{totalAdmins === 1 ? "" : "s"}
           </p>
@@ -123,7 +124,7 @@ export default function GerenciarUsuarios() {
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar por nome ou e-mail..."
-          className="bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition w-full sm:w-72"
+          className="bg-ink-950/60 border border-ink-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-ink-600 focus:outline-none focus:border-gold-400/70 focus:ring-1 focus:ring-gold-400/40 transition w-full sm:w-72"
         />
       </div>
 
@@ -139,7 +140,6 @@ export default function GerenciarUsuarios() {
                 : "text-rose-400 border-rose-500/30 bg-rose-500/10"
             }`}
           >
-            {status.tipo === "sucesso" ? "✅ " : "⚠️ "}
             {status.texto}
           </motion.div>
         )}
@@ -150,7 +150,7 @@ export default function GerenciarUsuarios() {
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-[68px] rounded-2xl bg-slate-900/50 border border-slate-800 animate-pulse"
+              className="h-[68px] rounded-2xl bg-ink-900/50 border border-ink-800 animate-pulse"
             />
           ))}
         </div>
@@ -159,7 +159,7 @@ export default function GerenciarUsuarios() {
           {erro}
         </div>
       ) : listaFiltrada.length === 0 ? (
-        <div className="p-8 rounded-2xl border border-dashed border-slate-800 text-center text-slate-500">
+        <div className="p-8 rounded-2xl border border-dashed border-ink-800 text-center text-ink-500">
           {busca
             ? "Nenhum usuário corresponde à busca."
             : "Nenhum usuário cadastrado ainda."}
@@ -178,13 +178,13 @@ export default function GerenciarUsuarios() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="flex items-center gap-3 p-3 sm:p-4 rounded-2xl bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition"
+                  className="flex items-center gap-3 p-3 sm:p-4 rounded-2xl bg-ink-900/50 border border-ink-800 hover:border-ink-700 transition"
                 >
                   <div
-                    className={`shrink-0 w-11 h-11 rounded-full flex items-center justify-center font-bold text-white ${
+                    className={`shrink-0 w-11 h-11 rounded-full flex items-center justify-center font-bold ${
                       ehAdmin
-                        ? "bg-gradient-to-br from-amber-500 to-orange-600"
-                        : "bg-gradient-to-br from-blue-500 to-indigo-600"
+                        ? "bg-gold-400 text-ink-950"
+                        : "bg-ink-700 text-ink-200"
                     }`}
                   >
                     {inicial(u.nome)}
@@ -196,23 +196,23 @@ export default function GerenciarUsuarios() {
                         {u.nome}
                       </span>
                       {souEu && (
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-ink-400 bg-ink-800 px-1.5 py-0.5 rounded">
                           você
                         </span>
                       )}
                       <span
                         className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md ${
                           ehAdmin
-                            ? "bg-amber-500/15 text-amber-400"
-                            : "bg-blue-500/15 text-blue-400"
+                            ? "bg-gold-400/15 text-gold-300"
+                            : "bg-white/[0.06] text-ink-300"
                         }`}
                       >
                         {ehAdmin ? "Admin" : "Aluno"}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                    <div className="flex items-center gap-2 text-xs text-ink-500 mt-0.5">
                       <span className="truncate">{u.email}</span>
-                      <span className="text-slate-700">·</span>
+                      <span className="text-ink-700">·</span>
                       <span className="whitespace-nowrap">
                         {formatarData(u.criado_em)}
                       </span>
@@ -231,8 +231,8 @@ export default function GerenciarUsuarios() {
                     }
                     className={`shrink-0 text-sm font-bold py-2 px-4 rounded-xl border transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
                       ehAdmin
-                        ? "border-slate-700 text-slate-300 hover:border-rose-500/50 hover:text-rose-400"
-                        : "border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
+                        ? "border-ink-700 text-ink-300 hover:border-rose-500/50 hover:text-rose-400"
+                        : "border-gold-400/40 text-gold-300 hover:bg-gold-400/10"
                     }`}
                   >
                     {salvando

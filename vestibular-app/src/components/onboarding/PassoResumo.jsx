@@ -46,15 +46,15 @@ export default function PassoResumo({ cronograma, onBack, onSaveSuccess }) {
     >
       {/* Resumo em números */}
       <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-4 text-center">
+        <div className="bg-ink-900/60 border border-ink-800 rounded-2xl p-4 text-center">
           <p className="text-3xl font-black text-emerald-400">{totalHoras.toFixed(1)}h</p>
-          <p className="text-[11px] uppercase tracking-wider text-gray-500 font-bold mt-1">
+          <p className="text-[11px] uppercase tracking-wider text-ink-500 font-bold mt-1">
             Total por ciclo
           </p>
         </div>
-        <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-4 text-center">
-          <p className="text-3xl font-black text-blue-400">{lista.length}</p>
-          <p className="text-[11px] uppercase tracking-wider text-gray-500 font-bold mt-1">
+        <div className="bg-ink-900/60 border border-ink-800 rounded-2xl p-4 text-center">
+          <p className="text-3xl font-black text-gold-400">{lista.length}</p>
+          <p className="text-[11px] uppercase tracking-wider text-ink-500 font-bold mt-1">
             Matérias
           </p>
         </div>
@@ -67,17 +67,17 @@ export default function PassoResumo({ cronograma, onBack, onSaveSuccess }) {
           return (
             <div
               key={materia.nome}
-              className="bg-gray-900/50 border border-gray-800 rounded-2xl p-4"
+              className="bg-ink-900/50 border border-ink-800 rounded-2xl p-4"
             >
               <div className="flex justify-between items-center mb-2">
-                <span className="font-semibold text-gray-200">{materia.nome}</span>
-                <span className="text-xs font-bold bg-blue-500/10 text-blue-300 px-3 py-1 rounded-full border border-blue-500/20">
+                <span className="font-semibold text-ink-200">{materia.nome}</span>
+                <span className="text-xs font-bold bg-gold-400/10 text-gold-300 px-3 py-1 rounded-full border border-gold-400/20">
                   {materia.horas}h
                 </span>
               </div>
-              <div className="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-ink-800 h-2 rounded-full overflow-hidden">
                 <motion.div
-                  className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full"
+                  className="bg-gold-400 h-full rounded-full"
                   initial={{ width: 0 }}
                   animate={{ width: `${pct}%` }}
                   transition={{ duration: 0.6, delay: i * 0.05, ease: "easeOut" }}
@@ -99,7 +99,7 @@ export default function PassoResumo({ cronograma, onBack, onSaveSuccess }) {
           type="button"
           onClick={onBack}
           disabled={salvando}
-          className="px-5 py-3 rounded-xl text-sm font-semibold border border-gray-700 bg-gray-800/50 text-gray-200 hover:border-gray-500 transition active:scale-95 disabled:opacity-50"
+          className="px-5 py-3 rounded-xl text-sm font-semibold border border-ink-700 bg-ink-800/50 text-ink-200 hover:border-ink-500 transition active:scale-95 disabled:opacity-50"
         >
           ← Ajustar
         </button>
@@ -108,7 +108,7 @@ export default function PassoResumo({ cronograma, onBack, onSaveSuccess }) {
           onClick={salvar}
           disabled={salvando}
           whileTap={{ scale: 0.99 }}
-          className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-600/30 disabled:opacity-60 disabled:cursor-wait"
+          className="flex-1 bg-gold-400 hover:bg-gold-300 text-ink-950 font-bold py-3 rounded-xl transition-all shadow-[var(--shadow-gold)] disabled:opacity-60 disabled:cursor-wait"
         >
           {salvando ? "Salvando..." : "🚀 Salvar e ir para o painel"}
         </motion.button>

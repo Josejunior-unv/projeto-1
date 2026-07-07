@@ -52,16 +52,16 @@ export const FILTROS = [
 // Dificuldade ESTIMADA (a API não informa dificuldade). Heurística baseada no
 // tamanho do enunciado + alternativas + presença de imagens. É aproximada.
 export const DIFICULDADES = {
-  facil: { label: "Fácil", icone: "🟢", cor: "text-emerald-400" },
-  media: { label: "Média", icone: "🟡", cor: "text-amber-400" },
-  dificil: { label: "Difícil", icone: "🔴", cor: "text-rose-400" },
+  facil: { label: "Fácil", icone: "●", cor: "text-emerald-400" },
+  media: { label: "Média", icone: "●", cor: "text-amber-400" },
+  dificil: { label: "Difícil", icone: "●", cor: "text-rose-400" },
 };
 
 export const FILTROS_DIFICULDADE = [
-  { id: "todas", label: "Todas", icone: "⚖️" },
-  { id: "facil", label: "Fácil", icone: "🟢" },
-  { id: "media", label: "Média", icone: "🟡" },
-  { id: "dificil", label: "Difícil", icone: "🔴" },
+  { id: "todas", label: "Todas", icone: "" },
+  { id: "facil", label: "Fácil", icone: "●", cor: "text-emerald-400" },
+  { id: "media", label: "Média", icone: "●", cor: "text-amber-400" },
+  { id: "dificil", label: "Difícil", icone: "●", cor: "text-rose-400" },
 ];
 
 export function estimarDificuldade(q) {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { Flame, LogOut } from 'lucide-react'
 import InterfaceBase from './components/Interface_base'
 import Login from './components/login'
 import PainelAdmin from './components/PainelAdmin'
@@ -100,8 +101,11 @@ function App() {
 
   if (carregandoSessao) {
     return (
-      <div className="bg-gray-950 min-h-screen flex items-center justify-center text-white font-semibold">
-        Carregando seu painel...
+      <div className="bg-ink-950 min-h-screen flex flex-col items-center justify-center gap-4">
+        <span className="w-12 h-12 rounded-2xl bg-gold-400 text-ink-950 flex items-center justify-center shadow-[var(--shadow-gold)] animate-brilho">
+          <Flame size={22} strokeWidth={2.5} />
+        </span>
+        <p className="text-ink-400 text-sm font-medium">Carregando seu painel...</p>
       </div>
     )
   }
@@ -121,12 +125,14 @@ function App() {
           ) : cargo !== 'admin' ? (
             <Navigate to="/app" replace />
           ) : (
-            <div className="bg-gray-950 min-h-screen relative pt-16 pb-10">
+            <div className="bg-ink-950 min-h-screen relative pt-16 pb-10">
               <button
                 onClick={handleLogout}
-                className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 text-white font-extrabold py-2 px-4 rounded-lg transition shadow-md z-50 transform hover:scale-105 active:scale-95"
+                className="absolute top-4 right-4 z-50 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold
+                           text-ink-300 bg-ink-900 border border-white/[0.08] hover:text-rose-300 hover:border-rose-500/30
+                           transition-all active:scale-95"
               >
-                Sair da Conta Admin
+                <LogOut size={15} /> Sair
               </button>
               <PainelAdmin />
             </div>

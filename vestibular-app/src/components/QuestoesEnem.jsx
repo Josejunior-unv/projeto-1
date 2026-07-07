@@ -1,9 +1,21 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  SlidersHorizontal,
+  LayoutGrid,
+  SkipForward,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
 import { buscarTodasQuestoesDoAno } from "./enemService.js";
 import { registrarRespostaEnem } from "./estatisticas.js";
 import { usePersistedState } from "../hooks/usePersistedState";
 import QuestaoCard from "./questoes/QuestaoCard.jsx";
+import { Botao, Indicador, BarraProgresso, CampoSelect } from "./ui";
+import { cx } from "./ui/cx";
 import {
   idQuestao,
   nomeMateria,
@@ -33,38 +45,21 @@ function carregarRespostasLocais(userId) {
   }
 }
 
-// Ícone de seta reutilizado nos botões de navegação.
-const Seta = ({ direcao = "direita" }) => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={direcao === "esquerda" ? "" : "rotate-180"}
-  >
-    <path d="M15 18l-6-6 6-6" />
-  </svg>
-);
-
 function SkeletonQuestao() {
   return (
-    <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-7 animate-pulse">
+    <div className="bg-ink-900 border border-white/[0.06] rounded-2xl p-7 animate-pulse">
       <div className="flex gap-3 mb-6">
-        <div className="h-6 w-20 bg-gray-800 rounded-lg" />
-        <div className="h-6 w-28 bg-gray-800 rounded-lg" />
+        <div className="h-6 w-20 bg-ink-800 rounded-lg" />
+        <div className="h-6 w-28 bg-ink-800 rounded-lg" />
       </div>
       <div className="space-y-2 mb-6">
-        <div className="h-3 bg-gray-800 rounded w-full" />
-        <div className="h-3 bg-gray-800 rounded w-11/12" />
-        <div className="h-3 bg-gray-800 rounded w-9/12" />
+        <div className="h-3 bg-ink-800 rounded w-full" />
+        <div className="h-3 bg-ink-800 rounded w-11/12" />
+        <div className="h-3 bg-ink-800 rounded w-9/12" />
       </div>
       <div className="space-y-3">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-12 bg-gray-800/70 rounded-xl" />
+          <div key={i} className="h-12 bg-ink-800/70 rounded-xl" />
         ))}
       </div>
     </div>
@@ -293,88 +288,73 @@ function QuestoesEnem({ userId }) {
   return (
     <div className="mt-6" ref={topoRef}>
       {/* HUD — indicadores + progresso (fica fixo no topo ao rolar) */}
-      <div className="sticky top-0 z-20 -mx-2 px-2 pt-2 pb-3 bg-gray-950/90 backdrop-blur-md">
-        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-900/40 border border-gray-800">
+      <div className="sticky top-0 z-20 -mx-2 px-2 pt-2 pb-3 bg-ink-950/90 backdrop-blur-md">
+        <div className="p-4 sm:p-5 rounded-2xl bg-ink-900 border border-white/[0.06] shadow-[var(--shadow-card)]">
           <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-black text-white">
+              <span className="text-sm font-black text-white font-display tabular-nums">
                 Questão {total === 0 ? 0 : indiceAtual + 1}
-                <span className="text-gray-500 font-bold"> de {total}</span>
+                <span className="text-ink-500 font-bold"> de {total}</span>
               </span>
               {questaoAtual && (
                 <>
-                  <span className="text-xs font-semibold bg-purple-500/10 text-purple-300 border border-purple-500/20 px-2.5 py-1 rounded-lg">
+                  <span className="text-[11px] font-semibold bg-white/[0.04] text-ink-300 border border-white/[0.08] px-2.5 py-1 rounded-lg">
                     {nomeMateria(questaoAtual)}
                   </span>
                   {difAtual && (
-                    <span
-                      className={`text-xs font-semibold bg-gray-800/60 border border-gray-700 px-2.5 py-1 rounded-lg ${difAtual.cor}`}
-                    >
-                      {difAtual.icone} {difAtual.label}
+                    <span className="flex items-center gap-1.5 text-[11px] font-semibold bg-white/[0.04] border border-white/[0.08] px-2.5 py-1 rounded-lg text-ink-300">
+                      <span className={cx("text-[8px]", difAtual.cor)}>●</span>
+                      {difAtual.label}
                     </span>
                   )}
                 </>
               )}
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="text-center">
-                <p className="text-lg font-black text-emerald-400 leading-none">
-                  {progresso.acertos}
-                </p>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">
-                  Acertos
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-black text-rose-400 leading-none">
-                  {progresso.erros}
-                </p>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">
-                  Erros
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-black text-cyan-400 leading-none">
-                  {progresso.pctAcerto}%
-                </p>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">
-                  Aprov.
-                </p>
-              </div>
+            <div className="flex items-center gap-5">
+              <Indicador
+                valor={progresso.acertos}
+                rotulo="Acertos"
+                cor="text-emerald-400"
+              />
+              <Indicador
+                valor={progresso.erros}
+                rotulo="Erros"
+                cor="text-rose-400"
+              />
+              <Indicador
+                valor={`${progresso.pctAcerto}%`}
+                rotulo="Aprov."
+                cor="text-gold-400"
+              />
             </div>
           </div>
 
           {/* Barra de progresso (respondidas / total) */}
-          <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progresso.pctFeito}%` }}
-              transition={{ type: "spring", stiffness: 60, damping: 15 }}
-            />
-          </div>
+          <BarraProgresso valor={progresso.pctFeito} altura="h-2" />
 
           {/* Ações rápidas */}
           <div className="flex items-center justify-between gap-2 mt-3">
-            <button
-              type="button"
+            <Botao
+              variante="secundario"
+              tamanho="sm"
               onClick={() => setFiltrosAbertos((v) => !v)}
-              className="text-xs font-semibold text-gray-300 bg-gray-800/60 border border-gray-700 hover:border-blue-500/50 px-3 py-1.5 rounded-lg transition active:scale-95"
             >
-              ⚙️ Filtros {filtrosAbertos ? "▲" : "▼"}
-            </button>
-            <button
-              type="button"
+              <SlidersHorizontal size={13} />
+              Filtros
+              {filtrosAbertos ? (
+                <ChevronUp size={13} />
+              ) : (
+                <ChevronDown size={13} />
+              )}
+            </Botao>
+            <Botao
+              variante={revisao ? "primario" : "secundario"}
+              tamanho="sm"
               onClick={() => setRevisao((v) => !v)}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition active:scale-95 ${
-                revisao
-                  ? "bg-blue-600 text-white border-blue-500"
-                  : "text-gray-300 bg-gray-800/60 border-gray-700 hover:border-blue-500/50"
-              }`}
             >
-              🧭 Revisar respostas
-            </button>
+              <LayoutGrid size={13} /> Revisar respostas
+            </Botao>
           </div>
         </div>
 
@@ -387,31 +367,32 @@ function QuestoesEnem({ userId }) {
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="mt-2 p-4 rounded-2xl bg-gray-900/70 border border-gray-800">
+              <div className="mt-2 p-4 rounded-2xl bg-ink-900 border border-white/[0.06]">
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                  <span className="text-sm font-bold text-gray-200">
+                  <span className="text-sm font-bold text-ink-100">
                     Filtrar por área
                   </span>
-                  <label className="flex items-center gap-2 text-xs text-gray-400">
-                    <span className="font-semibold">📅 Prova:</span>
-                    <select
+                  <label className="flex items-center gap-2 text-xs text-ink-400">
+                    <span className="font-semibold">Prova:</span>
+                    <CampoSelect
                       value={ano}
                       onChange={(e) => setAno(Number(e.target.value))}
-                      className="bg-gray-800 border border-gray-700 text-gray-100 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:border-blue-500 cursor-pointer"
+                      className="!w-auto py-1.5 text-xs"
                     >
                       {ANOS_DISPONIVEIS.map((a) => (
                         <option key={a} value={a}>
                           ENEM {a}
                         </option>
                       ))}
-                    </select>
+                    </CampoSelect>
                   </label>
                 </div>
 
                 <div className="relative mb-3">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                    🔍
-                  </span>
+                  <Search
+                    size={15}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-500 pointer-events-none"
+                  />
                   <input
                     type="search"
                     value={busca}
@@ -420,7 +401,7 @@ function QuestoesEnem({ userId }) {
                       setIndice(0);
                     }}
                     placeholder="Pesquisar no enunciado, matéria ou nº..."
-                    className="w-full bg-gray-900/70 border border-gray-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-600 focus:outline-none focus:border-blue-500 transition"
+                    className="w-full bg-ink-950/60 border border-ink-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-ink-500 focus:outline-none focus:border-gold-400/70 focus:ring-1 focus:ring-gold-400/40 transition"
                   />
                 </div>
 
@@ -435,22 +416,23 @@ function QuestoesEnem({ userId }) {
                         type="button"
                         disabled={desabilitado}
                         onClick={() => trocarFiltro(setFiltroAtivo, filtro.id)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all active:scale-95 ${
+                        className={cx(
+                          "flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all active:scale-95",
                           ativo
-                            ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/30"
+                            ? "bg-gold-400 text-ink-950 border-gold-400 shadow-[var(--shadow-gold)]"
                             : desabilitado
-                              ? "bg-gray-900/40 text-gray-600 border-gray-800 cursor-not-allowed"
-                              : "bg-gray-800/40 text-gray-300 border-gray-700/60 hover:border-blue-500/50 hover:text-white"
-                        }`}
+                              ? "bg-ink-900/40 text-ink-600 border-white/[0.04] cursor-not-allowed"
+                              : "bg-white/[0.03] text-ink-300 border-white/[0.08] hover:border-gold-400/40 hover:text-white",
+                        )}
                       >
-                        <span>{filtro.icone}</span>
                         <span>{filtro.label}</span>
                         <span
-                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                          className={cx(
+                            "text-[10px] font-bold px-1.5 py-0.5 rounded-md tabular-nums",
                             ativo
-                              ? "bg-white/20 text-white"
-                              : "bg-gray-900 text-gray-400"
-                          }`}
+                              ? "bg-ink-950/15 text-ink-950"
+                              : "bg-ink-950 text-ink-400",
+                          )}
                         >
                           {qtd}
                         </span>
@@ -460,7 +442,7 @@ function QuestoesEnem({ userId }) {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] text-gray-500 font-semibold">
+                  <span className="text-[11px] text-ink-500 font-semibold">
                     Dificuldade (estimada):
                   </span>
                   {FILTROS_DIFICULDADE.map((d) => {
@@ -470,13 +452,18 @@ function QuestoesEnem({ userId }) {
                         key={d.id}
                         type="button"
                         onClick={() => trocarFiltro(setDificuldadeAtiva, d.id)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all active:scale-95 ${
+                        className={cx(
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all active:scale-95",
                           ativo
-                            ? "bg-slate-100 text-slate-900 border-slate-100"
-                            : "bg-gray-800/40 text-gray-300 border-gray-700/60 hover:border-slate-400/50 hover:text-white"
-                        }`}
+                            ? "bg-ink-100 text-ink-950 border-ink-100"
+                            : "bg-white/[0.03] text-ink-300 border-white/[0.08] hover:border-ink-500 hover:text-white",
+                        )}
                       >
-                        <span>{d.icone}</span>
+                        {d.icone && (
+                          <span className={cx("text-[8px]", d.cor)}>
+                            {d.icone}
+                          </span>
+                        )}
                         {d.label}
                       </button>
                     );
@@ -495,9 +482,9 @@ function QuestoesEnem({ userId }) {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="mt-4 p-4 rounded-2xl bg-gray-900/70 border border-gray-800"
+            className="mt-4 p-4 rounded-2xl bg-ink-900 border border-white/[0.06]"
           >
-            <p className="text-xs text-gray-400 mb-3 font-semibold">
+            <p className="text-xs text-ink-400 mb-3 font-semibold">
               Toque em uma questão para ir até ela. Verde = acertou · Vermelho =
               errou · Cinza = não respondida.
             </p>
@@ -507,7 +494,7 @@ function QuestoesEnem({ userId }) {
                 const acertou = r === q.correctAlternative;
                 const atual = i === indiceAtual;
                 let cor =
-                  "bg-gray-800 text-gray-400 border-gray-700 hover:border-gray-500";
+                  "bg-ink-800 text-ink-400 border-white/[0.06] hover:border-ink-500";
                 if (r)
                   cor = acertou
                     ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
@@ -517,9 +504,12 @@ function QuestoesEnem({ userId }) {
                     key={idQuestao(q)}
                     type="button"
                     onClick={() => irPara(i)}
-                    className={`aspect-square rounded-lg text-xs font-bold border transition-all active:scale-90 ${cor} ${
-                      atual ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-900" : ""
-                    }`}
+                    className={cx(
+                      "aspect-square rounded-lg text-xs font-bold border transition-all active:scale-90 tabular-nums",
+                      cor,
+                      atual &&
+                        "ring-2 ring-gold-400 ring-offset-2 ring-offset-ink-900",
+                    )}
                   >
                     {i + 1}
                   </button>
@@ -532,7 +522,7 @@ function QuestoesEnem({ userId }) {
 
       {/* NAVEGADOR DE QUESTÃO */}
       {total === 0 ? (
-        <div className="mt-6 p-8 rounded-2xl border border-gray-800 bg-gray-900/50 text-center text-gray-500">
+        <div className="mt-6 p-8 rounded-2xl border border-dashed border-ink-700 text-center text-ink-400">
           Nenhuma questão encontrada para estes filtros.
         </div>
       ) : (
@@ -543,9 +533,9 @@ function QuestoesEnem({ userId }) {
             onClick={anterior}
             disabled={indiceAtual === 0}
             aria-label="Questão anterior"
-            className="hidden sm:flex shrink-0 w-12 items-center justify-center rounded-2xl border border-gray-800 bg-gray-900/60 text-gray-300 hover:text-white hover:border-blue-500/50 hover:bg-gray-800 transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-800"
+            className="hidden sm:flex shrink-0 w-12 items-center justify-center rounded-2xl border border-white/[0.06] bg-ink-900 text-ink-300 hover:text-white hover:border-gold-400/40 transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-white/[0.06]"
           >
-            <Seta direcao="esquerda" />
+            <ChevronLeft size={22} />
           </button>
 
           {/* Card com transição de deslize (troca só o conteúdo) */}
@@ -576,9 +566,9 @@ function QuestoesEnem({ userId }) {
             onClick={proxima}
             disabled={indiceAtual >= total - 1}
             aria-label="Próxima questão"
-            className="hidden sm:flex shrink-0 w-12 items-center justify-center rounded-2xl border border-gray-800 bg-gray-900/60 text-gray-300 hover:text-white hover:border-blue-500/50 hover:bg-gray-800 transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-800"
+            className="hidden sm:flex shrink-0 w-12 items-center justify-center rounded-2xl border border-white/[0.06] bg-ink-900 text-ink-300 hover:text-white hover:border-gold-400/40 transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-white/[0.06]"
           >
-            <Seta direcao="direita" />
+            <ChevronRight size={22} />
           </button>
         </div>
       )}
@@ -586,37 +576,30 @@ function QuestoesEnem({ userId }) {
       {/* BARRA DE NAVEGAÇÃO INFERIOR (mobile + ações) */}
       {total > 0 && (
         <div className="mt-4 flex items-center justify-between gap-3">
-          <button
-            type="button"
+          <Botao
+            variante="secundario"
             onClick={anterior}
             disabled={indiceAtual === 0}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border border-gray-700 bg-gray-800/50 text-gray-200 hover:border-blue-500/50 transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            <Seta direcao="esquerda" /> Anterior
-          </button>
+            <ChevronLeft size={16} /> Anterior
+          </Botao>
 
-          <button
-            type="button"
+          <Botao
+            variante="fantasma"
             onClick={proxima}
             disabled={indiceAtual >= total - 1}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-300 hover:text-white transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
             title="Pular sem responder"
           >
-            Pular ⏭
-          </button>
+            Pular <SkipForward size={14} />
+          </Botao>
 
-          <button
-            type="button"
-            onClick={proxima}
-            disabled={indiceAtual >= total - 1}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border border-blue-500 bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/30 transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            Próxima <Seta direcao="direita" />
-          </button>
+          <Botao onClick={proxima} disabled={indiceAtual >= total - 1}>
+            Próxima <ChevronRight size={16} />
+          </Botao>
         </div>
       )}
 
-      <p className="mt-3 text-center text-[11px] text-gray-600">
+      <p className="mt-3 text-center text-[11px] text-ink-500">
         Dica: use as setas ← → do teclado para navegar e as letras A–E para
         responder.
       </p>

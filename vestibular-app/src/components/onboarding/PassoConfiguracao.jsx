@@ -14,12 +14,12 @@ const NIVEIS = [
 // Controle deslizante estilizado (rótulo + valor + range).
 function Slider({ label, valor, min, max, onChange, sufixo }) {
   return (
-    <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-4">
+    <div className="bg-ink-900/50 border border-ink-800 rounded-2xl p-4">
       <div className="flex items-center justify-between mb-3">
-        <label className="text-sm font-semibold text-gray-200">{label}</label>
-        <span className="text-lg font-black text-blue-400">
+        <label className="text-sm font-semibold text-ink-200">{label}</label>
+        <span className="text-lg font-black text-gold-400">
           {valor}
-          <span className="text-xs text-gray-500 font-bold"> {sufixo}</span>
+          <span className="text-xs text-ink-500 font-bold"> {sufixo}</span>
         </span>
       </div>
       <input
@@ -28,7 +28,7 @@ function Slider({ label, valor, min, max, onChange, sufixo }) {
         max={max}
         value={valor}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-blue-500 cursor-pointer"
+        className="w-full accent-gold-400 cursor-pointer"
       />
     </div>
   );
@@ -66,23 +66,23 @@ export default function PassoConfiguracao({ onNext, onBack, inicial = {} }) {
       </div>
 
       <div className="flex items-center justify-center gap-2 mb-6 text-sm">
-        <span className="text-gray-400">Total semanal:</span>
+        <span className="text-ink-400">Total semanal:</span>
         <span className="font-black text-emerald-400 text-lg">{totalSemana}h</span>
-        <span className="text-gray-600">({dias} × {horas}h)</span>
+        <span className="text-ink-600">({dias} × {horas}h)</span>
       </div>
 
-      <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">
+      <h3 className="text-sm font-bold text-ink-300 uppercase tracking-wider mb-3">
         Dificuldade por matéria
       </h3>
       <div className="space-y-2.5 max-h-[46vh] overflow-y-auto pr-1 mb-6">
         {pesos.map((materia, index) => (
           <div
             key={materia.nome}
-            className="bg-gray-900/50 border border-gray-800 rounded-2xl p-3.5"
+            className="bg-ink-900/50 border border-ink-800 rounded-2xl p-3.5"
           >
             <div className="flex items-center justify-between mb-2.5">
-              <span className="font-semibold text-gray-200 text-sm">{materia.nome}</span>
-              <span className="text-[11px] text-gray-500 font-medium">
+              <span className="font-semibold text-ink-200 text-sm">{materia.nome}</span>
+              <span className="text-[11px] text-ink-500 font-medium">
                 {NIVEIS[materia.peso - 1]?.label}
               </span>
             </div>
@@ -98,10 +98,10 @@ export default function PassoConfiguracao({ onNext, onBack, inicial = {} }) {
                     className={`flex-1 h-8 rounded-lg border-2 transition-all active:scale-90 ${
                       ativo
                         ? `${n.cor} scale-105`
-                        : "bg-gray-800/60 border-gray-700 hover:border-gray-500"
+                        : "bg-ink-800/60 border-ink-700 hover:border-ink-500"
                     }`}
                   >
-                    <span className={`text-xs font-bold ${ativo ? "text-white" : "text-gray-500"}`}>
+                    <span className={`text-xs font-bold ${ativo ? "text-white" : "text-ink-500"}`}>
                       {n.peso}
                     </span>
                   </button>
@@ -116,7 +116,7 @@ export default function PassoConfiguracao({ onNext, onBack, inicial = {} }) {
         <button
           type="button"
           onClick={onBack}
-          className="px-5 py-3 rounded-xl text-sm font-semibold border border-gray-700 bg-gray-800/50 text-gray-200 hover:border-gray-500 transition active:scale-95"
+          className="px-5 py-3 rounded-xl text-sm font-semibold border border-ink-700 bg-ink-800/50 text-ink-200 hover:border-ink-500 transition active:scale-95"
         >
           ← Voltar
         </button>
@@ -124,9 +124,9 @@ export default function PassoConfiguracao({ onNext, onBack, inicial = {} }) {
           type="button"
           onClick={finalizar}
           whileTap={{ scale: 0.99 }}
-          className="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/25"
+          className="flex-1 bg-gold-400 hover:bg-gold-300 text-ink-950 font-bold py-3 rounded-xl transition-all shadow-[var(--shadow-gold)]"
         >
-          Gerar meu cronograma ✨
+          Gerar meu cronograma
         </motion.button>
       </div>
     </OnboardingLayout>

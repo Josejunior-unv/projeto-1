@@ -38,18 +38,18 @@ export default function PassoVestibular({ onNext, inicial = "ENEM" }) {
               whileTap={{ scale: 0.98 }}
               className={`relative text-left p-5 rounded-2xl border-2 transition-colors ${
                 ativo
-                  ? "bg-blue-600/15 border-blue-500 shadow-lg shadow-blue-600/20"
-                  : "bg-gray-900/60 border-gray-800 hover:border-gray-600"
+                  ? "bg-gold-400/10 border-gold-400 shadow-[var(--shadow-gold)]"
+                  : "bg-ink-900/60 border-ink-800 hover:border-ink-600"
               }`}
             >
               {ativo && (
-                <span className="absolute top-3 right-3 w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center">
+                <span className="absolute top-3 right-3 w-6 h-6 rounded-full bg-gold-400 text-ink-950 text-xs font-bold flex items-center justify-center">
                   ✓
                 </span>
               )}
               <div className="text-4xl mb-3">{op.icone}</div>
               <h3 className="text-lg font-bold text-white">{op.nome}</h3>
-              <p className="text-xs text-gray-400 mt-1 leading-relaxed">{op.desc}</p>
+              <p className="text-xs text-ink-400 mt-1 leading-relaxed">{op.desc}</p>
             </motion.button>
           );
         })}
@@ -58,7 +58,7 @@ export default function PassoVestibular({ onNext, inicial = "ENEM" }) {
       <button
         type="button"
         onClick={() => onNext({ vestibular })}
-        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-600/30 active:scale-[0.99]"
+        className="w-full bg-gold-400 hover:bg-gold-300 text-ink-950 font-bold py-3.5 rounded-xl transition-all shadow-[var(--shadow-gold)] active:scale-[0.99]"
       >
         Continuar →
       </button>

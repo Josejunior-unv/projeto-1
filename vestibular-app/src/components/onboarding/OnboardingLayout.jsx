@@ -18,20 +18,23 @@ export default function OnboardingLayout({
   largura = "max-w-2xl",
 }) {
   return (
-    <div
-      className="min-h-screen flex items-center justify-center py-10 px-4"
-      style={{
-        backgroundImage: "url('/image.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed",
-      }}
-    >
+    <div className="relative min-h-screen flex items-center justify-center py-10 px-4 bg-ink-950 overflow-hidden">
+      {/* brilho dourado ambiente, mesmo clima da tela de login */}
+      <div
+        aria-hidden
+        className="absolute -top-48 -left-48 w-[620px] h-[620px] rounded-full opacity-[0.06] blur-3xl pointer-events-none"
+        style={{ background: "radial-gradient(circle, #F5C042 0%, transparent 70%)" }}
+      />
+      <div
+        aria-hidden
+        className="absolute -bottom-56 -right-40 w-[520px] h-[520px] rounded-full opacity-[0.05] blur-3xl pointer-events-none"
+        style={{ background: "radial-gradient(circle, #F5C042 0%, transparent 70%)" }}
+      />
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className={`w-full ${largura} bg-gray-950/80 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl p-6 sm:p-8`}
+        className={`w-full ${largura} bg-ink-950/80 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl p-6 sm:p-8`}
       >
         {/* Stepper */}
         <div className="flex items-center justify-center mb-8">
@@ -50,22 +53,22 @@ export default function OnboardingLayout({
                       concluido
                         ? "bg-emerald-500 border-emerald-500 text-white"
                         : ativo
-                          ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/40"
-                          : "bg-gray-900 border-gray-700 text-gray-500"
+                          ? "bg-gold-400 border-gold-400 text-ink-950 shadow-[var(--shadow-gold)]"
+                          : "bg-ink-900 border-ink-700 text-ink-500"
                     }`}
                   >
                     {concluido ? "✓" : p.n}
                   </motion.div>
                   <span
                     className={`text-[11px] font-semibold ${
-                      ativo ? "text-blue-300" : concluido ? "text-emerald-300" : "text-gray-500"
+                      ativo ? "text-gold-300" : concluido ? "text-emerald-300" : "text-ink-500"
                     }`}
                   >
                     {p.label}
                   </span>
                 </div>
                 {i < PASSOS.length - 1 && (
-                  <div className="w-10 sm:w-16 h-0.5 mx-1 sm:mx-2 mb-5 rounded-full overflow-hidden bg-gray-700">
+                  <div className="w-10 sm:w-16 h-0.5 mx-1 sm:mx-2 mb-5 rounded-full overflow-hidden bg-ink-700">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
                         p.n < passo ? "bg-emerald-500 w-full" : "bg-transparent w-0"
@@ -83,7 +86,7 @@ export default function OnboardingLayout({
             {titulo}
           </h2>
           {subtitulo && (
-            <p className="text-sm text-gray-400 mt-2 max-w-lg mx-auto leading-relaxed">
+            <p className="text-sm text-ink-400 mt-2 max-w-lg mx-auto leading-relaxed">
               {subtitulo}
             </p>
           )}

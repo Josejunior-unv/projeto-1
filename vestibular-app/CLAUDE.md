@@ -196,8 +196,16 @@ Sempre preserve funcionalidades existentes antes de adicionar novas.
 
 > Seção de referência viva. Atualize quando algo estrutural mudar.
 
+## Identidade visual / Design System (jul/2026)
+- **Identidade da marca** (extraída da logo "Pré-Vestibular UERJ Para Todos", em `public/logo-uerj.jpeg`): **tinta** (pretos quentes `ink-950…100`) + **ouro** (`gold-200…700`, selo da logo). Tokens Tailwind v4 definidos no `@theme` do `src/index.css` (cores, sombras `--shadow-gold/card/pop`, fontes).
+- **CTA primário é a assinatura**: texto preto sobre ouro (`bg-gold-400 text-ink-950`), como a placa "PARA TODOS" da logo. Estados: esmeralda = sucesso, rosa = erro, âmbar = aviso. **Não usar azul genérico.**
+- **Tipografia**: Archivo (display/títulos — `font-display`, h1–h3 já herdam via CSS) + Inter (corpo). Carregadas por Google Fonts no `index.html`.
+- **Ícones**: `lucide-react` para TODA a interface (ações, navegação). Emojis só como "conteúdo" (ícones de matéria, medalhas de gamificação).
+- **Kit de UI** em `src/components/ui/index.jsx`: `Botao` (variantes primario/secundario/fantasma/contorno/perigo), `Cartao`, `Selo`, `CampoTexto/CampoArea/CampoSelect`, `Alerta`, `Modal`, `EstadoVazio`, `Esqueleto`, `BarraProgresso`, `Indicador`, `CabecalhoPagina`. Util `cx` em `src/components/ui/cx.js` (arquivo separado por causa do `react-refresh/only-export-components`). **Sempre usar o kit em telas novas.**
+
 ## Stack
 - **React 19 + Vite 8 + Tailwind v4** (config em `@import "tailwindcss"` no `index.css`).
+- **lucide-react** (ícones).
 - **framer-motion** (animações), **recharts** (gráficos).
 - **Supabase** (auth + Postgres + Storage) em `src/SUPABASE.js` (credenciais via env `VITE_SUPABASE_*` com fallback embutido; a anon/publishable key é pública por design — segurança real = RLS).
 - Roteamento: **react-router** por abas em `/app/:aba`.
@@ -217,7 +225,9 @@ Sempre preserve funcionalidades existentes antes de adicionar novas.
 - **Confirm email** está DESLIGADO no Supabase (bom para testes; religar + configurar SMTP/Resend antes de divulgar pra público real). O serviço de e-mail embutido do Supabase é limitado (~2–4/hora).
 
 ## Estrutura de componentes
-- `Interface_base.jsx` — casca do painel do aluno (sidebar fixa "app-shell": só o `<main>` rola). Abas lazy-loaded: cronograma, tarefas, simulados, enem, materiais, estatisticas.
+- `Interface_base.jsx` — casca do painel do aluno (sidebar fixa "app-shell": só o `<main>` rola; colapsável no desktop, estado persistido). Abas lazy-loaded: simulados, enem, materiais (BibliotecaProvas), estatisticas.
+- `Home.jsx` — dashboard da aba "Início" (cronograma): saudação com nome do aluno, indicadores de desempenho (via `processarEstatisticas`), atalhos, notícias e plano semanal.
+- `BibliotecaProvas.jsx` — aba "Biblioteca UERJ" (materiais): organiza `materiais_estudo` em prateleiras **Ano → Tipo (Objetiva/Discursiva) → Matéria**, deduzindo ano (regex `(19|20)\d{2}`) e tipo (`objetiv|qualifica` / `discursiv`) do título+descrição. Basta o professor nomear bem (ex.: "UERJ 2026 — Discursiva — Física"). Sem ano identificado → seção "Outros materiais". Filtros persistidos (busca/ano/matéria/tipo).
 - `components/questoes/` — **compartilhado entre ENEM e Simulado**: `QuestaoCard.jsx` (render de 1 questão) + `questoesUtils.js` (FILTROS, dificuldade estimada, `nomeMateria`).
 - `QuestoesEnem.jsx` — navegador de 1 questão por vez (setas, X de Y, progresso, revisar).
 - `components/simulado/` — `Simulado.jsx` (config→execução→resultado) + `simuladosService.js` (histórico/ranking/conquistas/metas em **localStorage**).

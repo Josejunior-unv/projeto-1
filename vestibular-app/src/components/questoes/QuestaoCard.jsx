@@ -1,5 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { Check, X, CheckCircle2, XCircle } from "lucide-react";
 import { DIFICULDADES, nomeMateria } from "./questoesUtils.js";
+import { Selo } from "../ui";
+import { cx } from "../ui/cx";
 
 // Renderiza UMA questão do ENEM (selos, enunciado, imagens, alternativas e,
 // opcionalmente, o gabarito). Componente puro e reutilizável: é usado tanto na
@@ -24,32 +27,28 @@ export default function QuestaoCard({
   const bloqueado = !onResponder;
 
   return (
-    <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-800 rounded-2xl p-6 sm:p-7 shadow-2xl">
+    <div className="bg-ink-900 border border-white/[0.06] rounded-2xl p-6 sm:p-7 shadow-[var(--shadow-card)]">
       {/* SELOS */}
-      <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-6 gap-2 flex-wrap">
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          <span className="text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-lg">
-            Questão {questao.index}
-          </span>
-          <span className="text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20 px-3 py-1 rounded-lg">
-            {nomeMateria(questao)}
-          </span>
+      <div className="flex items-center justify-between border-b border-white/[0.06] pb-4 mb-6 gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Selo variante="ouro">Questão {questao.index}</Selo>
+          <Selo>{nomeMateria(questao)}</Selo>
           {dif && (
-            <span
-              className={`text-xs font-semibold bg-gray-800/60 border border-gray-700 px-2.5 py-1 rounded-lg ${dif.cor}`}
-              title="Dificuldade estimada"
-            >
-              {dif.icone} {dif.label}
-            </span>
+            <Selo title="Dificuldade estimada">
+              <span className={cx("text-[8px]", dif.cor)}>●</span>
+              {dif.label}
+            </Selo>
           )}
         </div>
-        <span className="text-xs text-gray-500">{questao.year}</span>
+        <span className="text-xs text-ink-500 font-semibold tabular-nums">
+          ENEM {questao.year}
+        </span>
       </div>
 
       {/* ENUNCIADO */}
       {questao.context && (
         <div className="mb-6">
-          <p className="text-gray-300 text-sm leading-7 whitespace-pre-line">
+          <p className="text-ink-200 text-[15px] leading-7 whitespace-pre-line">
             {questao.context}
           </p>
         </div>
@@ -57,7 +56,7 @@ export default function QuestaoCard({
 
       {/* Comando/pergunta em destaque, quando a API fornece */}
       {questao.alternativesIntroduction && (
-        <p className="text-gray-100 text-sm font-semibold leading-6 mb-6">
+        <p className="text-white text-[15px] font-semibold leading-7 mb-6">
           {questao.alternativesIntroduction}
         </p>
       )}
@@ -68,7 +67,7 @@ export default function QuestaoCard({
           {questao.files.map((imagem, index) => (
             <div
               key={index}
-              className="overflow-hidden rounded-xl border border-gray-700 bg-black"
+              className="overflow-hidden rounded-xl border border-white/[0.08] bg-black"
             >
               <img
                 src={imagem}
@@ -82,22 +81,27 @@ export default function QuestaoCard({
       )}
 
       {/* ALTERNATIVAS */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2.5" role="listbox" aria-label="Alternativas">
         {alternativas.map((alt) => {
           const correta = alt.letter === questao.correctAlternative;
           const selecionada = resposta === alt.letter;
 
           let estilo =
-            "bg-gray-800/40 border-gray-700/50 text-gray-300 hover:border-blue-500/40 hover:bg-gray-800/70";
+            "bg-white/[0.02] border-white/[0.07] hover:border-gold-400/40 hover:bg-white/[0.04]";
+          let chip = "border-ink-600 text-ink-300 group-hover/alt:border-gold-400/50 group-hover/alt:text-gold-300";
+
           if (!revelar && selecionada) {
             // Modo simulado: destaca a escolha sem revelar o gabarito.
-            estilo = "bg-blue-500/10 border-blue-500 text-blue-200";
+            estilo = "bg-gold-400/[0.07] border-gold-400/60";
+            chip = "bg-gold-400 border-gold-400 text-ink-950 font-black";
           }
           if (revelar && selecionada && !correta) {
-            estilo = "bg-red-500/10 border-red-500 text-red-300";
+            estilo = "bg-rose-500/[0.07] border-rose-500/50";
+            chip = "bg-rose-500 border-rose-500 text-white font-black";
           }
           if (revelar && correta) {
-            estilo = "bg-green-500/10 border-green-500 text-green-300";
+            estilo = "bg-emerald-500/[0.07] border-emerald-500/50";
+            chip = "bg-emerald-500 border-emerald-500 text-white font-black";
           }
 
           return (
@@ -105,25 +109,33 @@ export default function QuestaoCard({
               key={alt.letter}
               type="button"
               disabled={bloqueado || (revelar && !!resposta)}
-              whileTap={!bloqueado ? { scale: 0.98 } : undefined}
-              animate={revelar && correta ? { scale: [1, 1.015, 1] } : {}}
+              whileTap={!bloqueado ? { scale: 0.99 } : undefined}
+              animate={revelar && correta ? { scale: [1, 1.01, 1] } : {}}
               transition={{ duration: 0.3 }}
               onClick={() => onResponder?.(alt.letter)}
-              className={`w-full text-left p-4 sm:p-5 rounded-xl border transition-colors duration-200 ${estilo} ${
-                bloqueado ? "cursor-default" : ""
-              }`}
+              className={cx(
+                "group/alt w-full text-left p-3.5 sm:p-4 rounded-xl border transition-colors duration-200",
+                estilo,
+                bloqueado && "cursor-default",
+              )}
             >
-              <div className="flex items-start gap-3">
-                <span className="font-bold text-blue-400">{alt.letter})</span>
-                <span className="text-sm leading-6">{alt.text}</span>
+              <div className="flex items-start gap-3.5">
+                <span
+                  className={cx(
+                    "w-8 h-8 shrink-0 rounded-lg border flex items-center justify-center text-sm font-bold transition-colors duration-200",
+                    chip,
+                  )}
+                >
+                  {alt.letter}
+                </span>
+                <span className="text-sm leading-6 text-ink-200 pt-1 flex-1">
+                  {alt.text}
+                </span>
                 {revelar && correta && (
-                  <span className="ml-auto text-green-400">✓</span>
+                  <Check size={18} className="shrink-0 mt-1.5 text-emerald-400" />
                 )}
                 {revelar && selecionada && !correta && (
-                  <span className="ml-auto text-red-400">✕</span>
-                )}
-                {!revelar && selecionada && (
-                  <span className="ml-auto text-blue-400">●</span>
+                  <X size={18} className="shrink-0 mt-1.5 text-rose-400" />
                 )}
               </div>
 
@@ -132,7 +144,7 @@ export default function QuestaoCard({
                   src={alt.file}
                   alt={`Alternativa ${alt.letter}`}
                   loading="lazy"
-                  className="mt-4 rounded-lg border border-gray-700"
+                  className="mt-4 ml-11 rounded-lg border border-white/[0.08]"
                 />
               )}
             </motion.button>
@@ -146,15 +158,18 @@ export default function QuestaoCard({
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
-            className="mt-6 pt-5 border-t border-gray-800 overflow-hidden"
+            className="mt-6 pt-5 border-t border-white/[0.06] overflow-hidden"
           >
             {acertou ? (
-              <div className="bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-3 rounded-xl text-sm font-semibold">
-                ✅ Você acertou a questão.
+              <div className="flex items-center gap-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 px-4 py-3 rounded-xl text-sm font-semibold">
+                <CheckCircle2 size={17} className="shrink-0" />
+                Você acertou a questão.
               </div>
             ) : (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm font-semibold">
-                ❌ Você errou. A resposta correta é {questao.correctAlternative}.
+              <div className="flex items-center gap-2.5 bg-rose-500/10 border border-rose-500/30 text-rose-300 px-4 py-3 rounded-xl text-sm font-semibold">
+                <XCircle size={17} className="shrink-0" />
+                Você errou. A resposta correta é a alternativa{" "}
+                {questao.correctAlternative}.
               </div>
             )}
           </motion.div>

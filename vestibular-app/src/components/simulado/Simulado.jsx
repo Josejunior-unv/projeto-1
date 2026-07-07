@@ -54,8 +54,8 @@ function Chip({ ativo, onClick, children }) {
       onClick={onClick}
       className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition-all active:scale-95 ${
         ativo
-          ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/30"
-          : "bg-gray-800/40 text-gray-300 border-gray-700/60 hover:border-blue-500/50 hover:text-white"
+          ? "bg-gold-400 text-ink-950 border-gold-400 shadow-[var(--shadow-gold)]"
+          : "bg-ink-800/40 text-ink-300 border-ink-700/60 hover:border-gold-400/40 hover:text-white"
       }`}
     >
       {children}
@@ -286,25 +286,25 @@ export default function Simulado({ userId }) {
     return (
       <div className="max-w-3xl">
         <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-100">
+          <h1 className="text-2xl sm:text-3xl font-bold text-ink-100">
             Simulados
           </h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-ink-400 mt-1">
             Monte um simulado, cronometre seu tempo e acompanhe sua evolução.
           </p>
         </div>
 
         {/* Meta semanal */}
-        <div className="mb-6 p-5 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-900/40 border border-gray-800">
+        <div className="mb-6 p-5 rounded-2xl bg-gradient-to-br from-ink-900 to-ink-900/40 border border-ink-800">
           <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
             <div>
-              <h3 className="text-sm font-bold text-gray-200">Meta semanal</h3>
-              <p className="text-xs text-gray-500">
+              <h3 className="text-sm font-bold text-ink-200">Meta semanal</h3>
+              <p className="text-xs text-ink-500">
                 {progMeta.feitos} de {progMeta.alvo} simulados nesta semana
                 {progMeta.concluida ? " · concluída! 🎉" : ""}
               </p>
             </div>
-            <label className="flex items-center gap-2 text-xs text-gray-400">
+            <label className="flex items-center gap-2 text-xs text-ink-400">
               Alvo:
               <select
                 value={meta.simuladosPorSemana}
@@ -313,7 +313,7 @@ export default function Simulado({ userId }) {
                   setMeta(nova);
                   salvarMeta(userId, nova);
                 }}
-                className="bg-gray-800 border border-gray-700 text-gray-100 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-500 cursor-pointer"
+                className="bg-ink-800 border border-ink-700 text-ink-100 rounded-lg px-2 py-1 focus:outline-none focus:border-gold-400/70 cursor-pointer"
               >
                 {[1, 2, 3, 5, 7].map((n) => (
                   <option key={n} value={n}>
@@ -323,9 +323,9 @@ export default function Simulado({ userId }) {
               </select>
             </label>
           </div>
-          <div className="w-full h-2.5 bg-gray-800 rounded-full overflow-hidden">
+          <div className="w-full h-2.5 bg-ink-800 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full"
+              className="h-full bg-emerald-400 rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progMeta.pct}%` }}
               transition={{ duration: 0.6, ease: "easeOut" }}
@@ -334,12 +334,12 @@ export default function Simulado({ userId }) {
         </div>
 
         {/* Configuração do simulado */}
-        <div className="p-6 rounded-2xl bg-gray-900/60 border border-gray-800 mb-6">
+        <div className="p-6 rounded-2xl bg-ink-900/60 border border-ink-800 mb-6">
           <h3 className="text-lg font-bold text-white mb-5">Novo simulado</h3>
 
           <div className="space-y-5">
             <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+              <p className="text-xs font-bold text-ink-400 uppercase tracking-wider mb-2">
                 Área
               </p>
               <div className="flex flex-wrap gap-2">
@@ -352,7 +352,7 @@ export default function Simulado({ userId }) {
             </div>
 
             <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+              <p className="text-xs font-bold text-ink-400 uppercase tracking-wider mb-2">
                 Dificuldade (estimada)
               </p>
               <div className="flex flex-wrap gap-2">
@@ -362,7 +362,12 @@ export default function Simulado({ userId }) {
                     ativo={dificuldade === d.id}
                     onClick={() => setDificuldade(d.id)}
                   >
-                    {d.icone} {d.label}
+                    {d.icone && (
+                      <span className={`text-[8px] ${d.cor || ""}`}>
+                        {d.icone}
+                      </span>
+                    )}{" "}
+                    {d.label}
                   </Chip>
                 ))}
               </div>
@@ -370,7 +375,7 @@ export default function Simulado({ userId }) {
 
             <div className="flex flex-wrap gap-6">
               <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                <p className="text-xs font-bold text-ink-400 uppercase tracking-wider mb-2">
                   Nº de questões
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -383,7 +388,7 @@ export default function Simulado({ userId }) {
               </div>
 
               <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                <p className="text-xs font-bold text-ink-400 uppercase tracking-wider mb-2">
                   Prova
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -393,7 +398,7 @@ export default function Simulado({ userId }) {
                   <select
                     value={ano === "aleatorio" ? "" : ano}
                     onChange={(e) => setAno(Number(e.target.value))}
-                    className="bg-gray-800 border border-gray-700 text-gray-100 text-sm font-semibold rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500 cursor-pointer"
+                    className="bg-ink-800 border border-ink-700 text-ink-100 text-sm font-semibold rounded-xl px-3 py-2 focus:outline-none focus:border-gold-400/70 cursor-pointer"
                   >
                     <option value="" disabled>
                       Escolher ano
@@ -415,7 +420,7 @@ export default function Simulado({ userId }) {
                 aria-checked={modoProva}
                 onClick={() => setModoProva((v) => !v)}
                 className={`relative w-12 h-6 rounded-full transition-colors ${
-                  modoProva ? "bg-blue-600" : "bg-gray-700"
+                  modoProva ? "bg-gold-400" : "bg-ink-700"
                 }`}
               >
                 <span
@@ -424,7 +429,7 @@ export default function Simulado({ userId }) {
                   }`}
                 />
               </button>
-              <span className="text-sm text-gray-300">
+              <span className="text-sm text-ink-300">
                 <span className="font-semibold text-white">Modo prova</span> — tempo
                 limite de {formatarTempo(quantidade * SEGUNDOS_POR_QUESTAO)} (3 min/questão).
                 Sem tempo limite = cronômetro livre.
@@ -441,7 +446,7 @@ export default function Simulado({ userId }) {
               type="button"
               onClick={iniciarSimulado}
               disabled={carregando}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-600/30 active:scale-[0.99] disabled:opacity-60 disabled:cursor-wait"
+              className="w-full bg-gold-400 hover:bg-gold-300 text-ink-950 font-bold py-3.5 rounded-xl transition-all shadow-[var(--shadow-gold)] active:scale-[0.99] disabled:opacity-60 disabled:cursor-wait"
             >
               {carregando ? "Preparando questões..." : "🚀 Iniciar simulado"}
             </button>
@@ -450,37 +455,37 @@ export default function Simulado({ userId }) {
 
         {/* Resumo + Ranking */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="p-6 rounded-2xl bg-gray-900/60 border border-gray-800">
-            <h3 className="text-sm font-bold text-gray-200 mb-4">Seus números</h3>
+          <div className="p-6 rounded-2xl bg-ink-900/60 border border-ink-800">
+            <h3 className="text-sm font-bold text-ink-200 mb-4">Seus números</h3>
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
                 <p className="text-2xl font-black text-white">{resumo.total}</p>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Simulados</p>
+                <p className="text-[10px] uppercase tracking-wider text-ink-500 font-bold">Simulados</p>
               </div>
               <div>
                 <p className="text-2xl font-black text-emerald-400">{resumo.melhorPct}%</p>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Recorde</p>
+                <p className="text-[10px] uppercase tracking-wider text-ink-500 font-bold">Recorde</p>
               </div>
               <div>
-                <p className="text-2xl font-black text-cyan-400">{resumo.mediaPct}%</p>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Média</p>
+                <p className="text-2xl font-black text-gold-400">{resumo.mediaPct}%</p>
+                <p className="text-[10px] uppercase tracking-wider text-ink-500 font-bold">Média</p>
               </div>
             </div>
           </div>
 
-          <div className="p-6 rounded-2xl bg-gray-900/60 border border-gray-800">
-            <h3 className="text-sm font-bold text-gray-200 mb-4">🏆 Ranking pessoal</h3>
+          <div className="p-6 rounded-2xl bg-ink-900/60 border border-ink-800">
+            <h3 className="text-sm font-bold text-ink-200 mb-4">🏆 Ranking pessoal</h3>
             {top.length === 0 ? (
-              <p className="text-gray-600 text-sm">Faça um simulado para entrar no ranking.</p>
+              <p className="text-ink-600 text-sm">Faça um simulado para entrar no ranking.</p>
             ) : (
               <ol className="space-y-2">
                 {top.map((s, i) => (
                   <li key={s.id} className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2 text-gray-300">
-                      <span className="w-5 text-center font-black text-gray-500">{i + 1}º</span>
+                    <span className="flex items-center gap-2 text-ink-300">
+                      <span className="w-5 text-center font-black text-ink-500">{i + 1}º</span>
                       {medalhaDe(s.pct)?.icone || "•"} {s.pct}%
                     </span>
-                    <span className="text-gray-600 text-xs">
+                    <span className="text-ink-600 text-xs">
                       {s.totalQuestoes} q · {formatarTempo(s.tempoSegundos)}
                     </span>
                   </li>
@@ -491,8 +496,8 @@ export default function Simulado({ userId }) {
         </div>
 
         {/* Conquistas */}
-        <div className="p-6 rounded-2xl bg-gray-900/60 border border-gray-800 mb-6">
-          <h3 className="text-sm font-bold text-gray-200 mb-4">Conquistas</h3>
+        <div className="p-6 rounded-2xl bg-ink-900/60 border border-ink-800 mb-6">
+          <h3 className="text-sm font-bold text-ink-200 mb-4">Conquistas</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {listaConquistas.map((c) => (
               <div
@@ -501,12 +506,12 @@ export default function Simulado({ userId }) {
                 className={`p-3 rounded-xl border text-center transition-all ${
                   c.ok
                     ? "bg-amber-500/10 border-amber-500/30"
-                    : "bg-gray-900/40 border-gray-800 opacity-50 grayscale"
+                    : "bg-ink-900/40 border-ink-800 opacity-50 grayscale"
                 }`}
               >
                 <p className="text-2xl">{c.icone}</p>
-                <p className="text-[11px] font-bold text-gray-200 mt-1">{c.nome}</p>
-                <p className="text-[10px] text-gray-500 leading-tight mt-0.5">{c.desc}</p>
+                <p className="text-[11px] font-bold text-ink-200 mt-1">{c.nome}</p>
+                <p className="text-[10px] text-ink-500 leading-tight mt-0.5">{c.desc}</p>
               </div>
             ))}
           </div>
@@ -514,43 +519,43 @@ export default function Simulado({ userId }) {
 
         {/* Recomendações + histórico */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-6 rounded-2xl bg-gray-900/60 border border-gray-800">
-            <h3 className="text-sm font-bold text-gray-200 mb-4">💡 Recomendações de estudo</h3>
+          <div className="p-6 rounded-2xl bg-ink-900/60 border border-ink-800">
+            <h3 className="text-sm font-bold text-ink-200 mb-4">💡 Recomendações de estudo</h3>
             <ul className="space-y-3">
               {recs.map((r, i) => (
-                <li key={i} className="text-sm text-gray-400 leading-relaxed border-l-2 border-blue-500/40 pl-3">
+                <li key={i} className="text-sm text-ink-400 leading-relaxed border-l-2 border-gold-400/40 pl-3">
                   {r.texto}
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="p-6 rounded-2xl bg-gray-900/60 border border-gray-800">
-            <h3 className="text-sm font-bold text-gray-200 mb-4">Histórico</h3>
+          <div className="p-6 rounded-2xl bg-ink-900/60 border border-ink-800">
+            <h3 className="text-sm font-bold text-ink-200 mb-4">Histórico</h3>
             {historico.length === 0 ? (
-              <p className="text-gray-600 text-sm">Nenhum simulado ainda.</p>
+              <p className="text-ink-600 text-sm">Nenhum simulado ainda.</p>
             ) : (
               <ul className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 {historico.map((s) => (
                   <li
                     key={s.id}
-                    className="flex items-center justify-between gap-2 py-2 px-3 rounded-xl bg-gray-900/50 border border-gray-800"
+                    className="flex items-center justify-between gap-2 py-2 px-3 rounded-xl bg-ink-900/50 border border-ink-800"
                   >
                     <span className="flex items-center gap-2 min-w-0">
                       <span className="text-lg">{medalhaDe(s.pct)?.icone || "📝"}</span>
                       <span className="min-w-0">
-                        <span className="block text-sm text-gray-200 font-semibold">
+                        <span className="block text-sm text-ink-200 font-semibold">
                           {s.pct}%{" "}
-                          <span className="text-gray-500 font-normal">
+                          <span className="text-ink-500 font-normal">
                             ({s.acertos}/{s.totalQuestoes})
                           </span>
                         </span>
-                        <span className="block text-[11px] text-gray-500 truncate">
+                        <span className="block text-[11px] text-ink-500 truncate">
                           {s.modo} · {new Date(s.dataISO).toLocaleDateString("pt-BR")}
                         </span>
                       </span>
                     </span>
-                    <span className="text-[11px] text-gray-600 whitespace-nowrap">
+                    <span className="text-[11px] text-ink-600 whitespace-nowrap">
                       {formatarTempo(s.tempoSegundos)}
                     </span>
                   </li>
@@ -569,31 +574,31 @@ export default function Simulado({ userId }) {
     return (
       <div className="max-w-3xl" ref={cardTopoRef}>
         {/* HUD */}
-        <div className="sticky top-0 z-20 -mx-2 px-2 pt-2 pb-3 bg-gray-950/90 backdrop-blur-md">
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-900/40 border border-gray-800">
+        <div className="sticky top-0 z-20 -mx-2 px-2 pt-2 pb-3 bg-ink-950/90 backdrop-blur-md">
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-ink-900 to-ink-900/40 border border-ink-800">
             <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
               <span className="text-sm font-black text-white">
                 Questão {indice + 1}
-                <span className="text-gray-500 font-bold"> de {total}</span>
+                <span className="text-ink-500 font-bold"> de {total}</span>
               </span>
               <div className="flex items-center gap-3">
                 <span
                   className={`font-mono font-black text-lg px-3 py-1 rounded-lg border ${
                     tempoBaixo
                       ? "text-rose-300 border-rose-500/40 bg-rose-500/10 animate-pulse"
-                      : "text-cyan-300 border-cyan-500/30 bg-cyan-500/10"
+                      : "text-gold-300 border-gold-400/30 bg-gold-400/10"
                   }`}
                 >
-                  ⏱ {formatarTempo(segundos)}
+                  {formatarTempo(segundos)}
                 </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-ink-500">
                   {respondidas}/{total} respondidas
                 </span>
               </div>
             </div>
-            <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-ink-800 rounded-full overflow-hidden">
               <motion.div
-                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"
+                className="h-full bg-gold-400 rounded-full"
                 animate={{ width: `${pctFeito}%` }}
                 transition={{ duration: 0.3 }}
               />
@@ -602,7 +607,7 @@ export default function Simulado({ userId }) {
               <button
                 type="button"
                 onClick={() => setRevisaoGrade((v) => !v)}
-                className="text-xs font-semibold text-gray-300 bg-gray-800/60 border border-gray-700 hover:border-blue-500/50 px-3 py-1.5 rounded-lg transition active:scale-95"
+                className="text-xs font-semibold text-ink-300 bg-ink-800/60 border border-ink-700 hover:border-gold-400/40 px-3 py-1.5 rounded-lg transition active:scale-95"
               >
                 🧭 Mapa de questões
               </button>
@@ -624,7 +629,7 @@ export default function Simulado({ userId }) {
                 exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden"
               >
-                <div className="mt-2 p-4 rounded-2xl bg-gray-900/70 border border-gray-800">
+                <div className="mt-2 p-4 rounded-2xl bg-ink-900/70 border border-ink-800">
                   <div className="grid grid-cols-8 sm:grid-cols-12 gap-2">
                     {questoes.map((q, i) => {
                       const feita = !!respostas[idQuestao(q)];
@@ -636,9 +641,9 @@ export default function Simulado({ userId }) {
                           onClick={() => irPara(i)}
                           className={`aspect-square rounded-lg text-xs font-bold border transition-all active:scale-90 ${
                             feita
-                              ? "bg-blue-500/20 text-blue-200 border-blue-500/40"
-                              : "bg-gray-800 text-gray-400 border-gray-700 hover:border-gray-500"
-                          } ${atual ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-900" : ""}`}
+                              ? "bg-gold-400/15 text-gold-200 border-gold-400/40"
+                              : "bg-ink-800 text-ink-400 border-ink-700 hover:border-ink-500"
+                          } ${atual ? "ring-2 ring-gold-400 ring-offset-2 ring-offset-ink-900" : ""}`}
                         >
                           {i + 1}
                         </button>
@@ -679,7 +684,7 @@ export default function Simulado({ userId }) {
             type="button"
             onClick={anterior}
             disabled={indice === 0}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border border-gray-700 bg-gray-800/50 text-gray-200 hover:border-blue-500/50 transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border border-ink-700 bg-ink-800/50 text-ink-200 hover:border-gold-400/40 transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
           >
             ← Anterior
           </button>
@@ -695,7 +700,7 @@ export default function Simulado({ userId }) {
             <button
               type="button"
               onClick={proxima}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold border border-blue-500 bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/30 transition active:scale-95"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold border border-gold-400 bg-gold-400 text-ink-950 hover:bg-gold-300 shadow-[var(--shadow-gold)] transition active:scale-95"
             >
               Próxima →
             </button>
@@ -711,11 +716,11 @@ export default function Simulado({ userId }) {
       return (
         <div className="max-w-3xl">
           <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-gray-100">Revisão do simulado</h1>
+            <h1 className="text-2xl font-bold text-ink-100">Revisão do simulado</h1>
             <button
               type="button"
               onClick={() => setRevisarQuestoes(false)}
-              className="text-sm font-semibold text-gray-300 bg-gray-800/60 border border-gray-700 hover:border-blue-500/50 px-4 py-2 rounded-xl transition active:scale-95"
+              className="text-sm font-semibold text-ink-300 bg-ink-800/60 border border-ink-700 hover:border-gold-400/40 px-4 py-2 rounded-xl transition active:scale-95"
             >
               ← Voltar ao resultado
             </button>
@@ -742,7 +747,7 @@ export default function Simulado({ userId }) {
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="p-8 rounded-[2rem] bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-800 shadow-2xl text-center mb-6"
+          className="p-8 rounded-[2rem] bg-gradient-to-br from-ink-900 to-ink-950 border border-ink-800 shadow-2xl text-center mb-6"
         >
           {r.medalhaObj ? (
             <motion.div
@@ -757,10 +762,10 @@ export default function Simulado({ userId }) {
             <div className="text-6xl mb-2">📊</div>
           )}
 
-          <p className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
+          <p className="text-6xl font-black text-gold-400">
             {r.pct}%
           </p>
-          <p className="text-gray-400 mt-1">
+          <p className="text-ink-400 mt-1">
             {r.acertos} de {r.totalQuestoes} questões
             {r.medalhaObj ? ` · Medalha de ${r.medalhaObj.nome}` : ""}
           </p>
@@ -776,13 +781,13 @@ export default function Simulado({ userId }) {
             </motion.p>
           )}
           {!c.recorde && c.deltaMedia != null && (
-            <p className="mt-3 text-sm text-gray-500">
+            <p className="mt-3 text-sm text-ink-500">
               {c.deltaMedia >= 0 ? "▲" : "▼"} {Math.abs(c.deltaMedia)}% em relação à
               sua média ({c.mediaAntes}%)
             </p>
           )}
           {c.primeiro && (
-            <p className="mt-3 text-sm text-blue-300">Seu primeiro simulado — boa! 🚀</p>
+            <p className="mt-3 text-sm text-gold-300">Seu primeiro simulado — boa! 🚀</p>
           )}
         </motion.div>
 
@@ -791,12 +796,12 @@ export default function Simulado({ userId }) {
           {[
             { v: r.acertos, l: "Acertos", c: "text-emerald-400" },
             { v: r.erros, l: "Erros", c: "text-rose-400" },
-            { v: r.emBranco, l: "Em branco", c: "text-gray-300" },
-            { v: formatarTempo(r.tempoSegundos), l: "Tempo", c: "text-cyan-400" },
+            { v: r.emBranco, l: "Em branco", c: "text-ink-300" },
+            { v: formatarTempo(r.tempoSegundos), l: "Tempo", c: "text-gold-400" },
           ].map((x) => (
-            <div key={x.l} className="p-4 rounded-2xl bg-gray-900/60 border border-gray-800 text-center">
+            <div key={x.l} className="p-4 rounded-2xl bg-ink-900/60 border border-ink-800 text-center">
               <p className={`text-2xl font-black ${x.c}`}>{x.v}</p>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold mt-1">
+              <p className="text-[10px] uppercase tracking-wider text-ink-500 font-bold mt-1">
                 {x.l}
               </p>
             </div>
@@ -823,18 +828,18 @@ export default function Simulado({ userId }) {
 
         {/* Desempenho por matéria neste simulado */}
         {r.porMateriaArr.length > 0 && (
-          <div className="p-6 rounded-2xl bg-gray-900/60 border border-gray-800 mb-6">
-            <h3 className="text-sm font-bold text-gray-200 mb-4">Desempenho por matéria</h3>
+          <div className="p-6 rounded-2xl bg-ink-900/60 border border-ink-800 mb-6">
+            <h3 className="text-sm font-bold text-ink-200 mb-4">Desempenho por matéria</h3>
             <div className="space-y-4">
               {r.porMateriaArr.map((m) => (
                 <div key={m.name}>
                   <div className="flex justify-between items-center mb-1 text-sm">
-                    <span className="text-gray-300 font-medium truncate">{m.name}</span>
-                    <span className="text-gray-500 text-xs">
+                    <span className="text-ink-300 font-medium truncate">{m.name}</span>
+                    <span className="text-ink-500 text-xs">
                       {m.acertos}/{m.total} · {m.pct}%
                     </span>
                   </div>
-                  <div className="w-full h-2.5 bg-gray-800 rounded-full overflow-hidden">
+                  <div className="w-full h-2.5 bg-ink-800 rounded-full overflow-hidden">
                     <motion.div
                       className={`h-full rounded-full ${
                         m.pct >= 70 ? "bg-emerald-500" : m.pct >= 40 ? "bg-amber-500" : "bg-rose-500"
@@ -855,23 +860,23 @@ export default function Simulado({ userId }) {
           <button
             type="button"
             onClick={() => setRevisarQuestoes(true)}
-            className="flex-1 min-w-[140px] py-3 rounded-xl text-sm font-bold border border-gray-700 bg-gray-800/50 text-gray-200 hover:border-blue-500/50 transition active:scale-95"
+            className="flex-1 min-w-[140px] py-3 rounded-xl text-sm font-bold border border-ink-700 bg-ink-800/50 text-ink-200 hover:border-gold-400/40 transition active:scale-95"
           >
             🔍 Revisar questões
           </button>
           <button
             type="button"
             onClick={refazer}
-            className="flex-1 min-w-[140px] py-3 rounded-xl text-sm font-bold border border-blue-500 bg-blue-600 text-white hover:bg-blue-500 transition active:scale-95 shadow-lg shadow-blue-600/30"
+            className="flex-1 min-w-[140px] py-3 rounded-xl text-sm font-bold border border-gold-400 bg-gold-400 text-ink-950 hover:bg-gold-300 transition active:scale-95 shadow-[var(--shadow-gold)]"
           >
             🔁 Refazer igual
           </button>
           <button
             type="button"
             onClick={() => setFase("config")}
-            className="flex-1 min-w-[140px] py-3 rounded-xl text-sm font-bold border border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-500 transition active:scale-95 shadow-lg shadow-emerald-600/30"
+            className="flex-1 min-w-[140px] py-3 rounded-xl text-sm font-bold border border-ink-700 bg-ink-800 text-ink-100 hover:border-ink-500 transition active:scale-95"
           >
-            ✨ Novo simulado
+            Novo simulado
           </button>
         </div>
       </div>

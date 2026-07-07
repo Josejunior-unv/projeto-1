@@ -48,7 +48,7 @@ export function salvarSimulado(userId, registro) {
 
 export function medalhaDe(pct) {
   if (pct >= 90) return { id: "ouro", nome: "Ouro", icone: "🥇", cor: "text-amber-300" };
-  if (pct >= 75) return { id: "prata", nome: "Prata", icone: "🥈", cor: "text-slate-300" };
+  if (pct >= 75) return { id: "prata", nome: "Prata", icone: "🥈", cor: "text-ink-300" };
   if (pct >= 60) return { id: "bronze", nome: "Bronze", icone: "🥉", cor: "text-orange-300" };
   return null;
 }

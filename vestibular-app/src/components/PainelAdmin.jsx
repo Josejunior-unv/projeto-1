@@ -1,5 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  BookOpen,
+  Newspaper,
+  Users,
+  ChevronUp,
+  ChevronDown,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { supabase } from "../SUPABASE";
 import {
   MATERIAS,
@@ -217,29 +226,30 @@ export default function PainelAdmin() {
         <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
           Painel do Professor
         </h1>
-        <p className="text-slate-400 mt-1">
+        <p className="text-ink-400 mt-1">
           Publique materiais por matéria — aparecem automaticamente em{" "}
-          <span className="text-blue-400 font-semibold">Minhas Tarefas</span> dos
+          <span className="text-gold-400 font-semibold">Minhas Tarefas</span> dos
           alunos.
         </p>
       </motion.div>
 
       {/* Alternância de seção */}
-      <div className="inline-flex p-1 rounded-2xl bg-slate-900/60 border border-slate-800 mb-6">
+      <div className="inline-flex p-1 rounded-2xl bg-ink-900/60 border border-ink-800 mb-6">
         {[
-          { id: "materiais", label: "📚 Materiais" },
-          { id: "noticias", label: "📰 Notícias" },
-          { id: "usuarios", label: "👥 Usuários" },
+          { id: "materiais", label: "Materiais", icone: BookOpen },
+          { id: "noticias", label: "Notícias", icone: Newspaper },
+          { id: "usuarios", label: "Usuários", icone: Users },
         ].map((s) => (
           <button
             key={s.id}
             onClick={() => setSecao(s.id)}
-            className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${
+            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold transition-all ${
               secao === s.id
-                ? "bg-slate-100 text-slate-900"
-                : "text-slate-400 hover:text-white"
+                ? "bg-gold-400 text-ink-950"
+                : "text-ink-400 hover:text-white"
             }`}
           >
+            <s.icone size={15} />
             {s.label}
           </button>
         ))}
@@ -267,7 +277,7 @@ export default function PainelAdmin() {
                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl border text-sm font-semibold whitespace-nowrap transition-all duration-200 active:scale-95 ${
                   ativo
                     ? `${c.fundo} ${c.texto} border-current shadow-lg`
-                    : "bg-slate-900/40 text-slate-400 border-slate-800 hover:text-white hover:border-slate-600"
+                    : "bg-ink-900/40 text-ink-400 border-ink-800 hover:text-white hover:border-ink-600"
                 }`}
               >
                 <span className="text-lg">{m.icone}</span>
@@ -284,7 +294,7 @@ export default function PainelAdmin() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             onSubmit={handleSubmit}
-            className={`p-6 rounded-3xl bg-slate-900/60 backdrop-blur-xl border ${cor.borda} shadow-2xl`}
+            className={`p-6 rounded-3xl bg-ink-900/60 backdrop-blur-xl border ${cor.borda} shadow-2xl`}
           >
             <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2">
               <span className={cor.texto}>●</span>
@@ -300,8 +310,8 @@ export default function PainelAdmin() {
                   onClick={() => atualizarCampo("tipo", t.id)}
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold border transition-all active:scale-95 ${
                     tipoAtual === t.id
-                      ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/30"
-                      : "bg-slate-800/50 text-slate-300 border-slate-700 hover:border-blue-500/50"
+                      ? "bg-gold-400 text-ink-950 border-gold-400 shadow-[var(--shadow-gold)]"
+                      : "bg-ink-800/50 text-ink-300 border-ink-700 hover:border-gold-400/40"
                   }`}
                 >
                   <span>{t.icone}</span>
@@ -315,42 +325,42 @@ export default function PainelAdmin() {
                 value={form.titulo}
                 onChange={(e) => atualizarCampo("titulo", e.target.value)}
                 placeholder="Título (ex: Lista de Funções — Semana 1)"
-                className="bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                className="bg-ink-950/60 border border-ink-700 rounded-xl px-4 py-3 text-white placeholder:text-ink-600 focus:outline-none focus:border-gold-400/70 focus:ring-1 focus:ring-gold-400/40 transition"
               />
 
               {/* Upload (PDF) */}
               {TIPOS_UPLOAD.includes(tipoAtual) && (
-                <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/40 p-4">
+                <div className="rounded-xl border border-dashed border-ink-700 bg-ink-950/40 p-4">
                   <input
                     ref={inputArquivoRef}
                     type="file"
                     accept="application/pdf"
                     onChange={(e) => setArquivo(e.target.files?.[0] || null)}
-                    className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 file:cursor-pointer cursor-pointer"
+                    className="block w-full text-sm text-ink-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-gold-400 file:text-ink-950 hover:file:bg-gold-300 file:cursor-pointer cursor-pointer"
                   />
                   {arquivo && (
-                    <p className="text-xs text-slate-400 mt-2">
+                    <p className="text-xs text-ink-400 mt-2">
                       📄 {arquivo.name}{" "}
-                      <span className="text-slate-600">
+                      <span className="text-ink-600">
                         ({formatarTamanho(arquivo.size)})
                       </span>
                     </p>
                   )}
                   {editandoId && !arquivo && (
-                    <p className="text-xs text-slate-600 mt-2">
+                    <p className="text-xs text-ink-600 mt-2">
                       Deixe em branco para manter o PDF atual, ou selecione um
                       novo para substituir.
                     </p>
                   )}
                   {progresso !== null && (
                     <div className="mt-3">
-                      <div className="flex justify-between text-xs text-slate-400 mb-1">
+                      <div className="flex justify-between text-xs text-ink-400 mb-1">
                         <span>Enviando...</span>
                         <span>{progresso}%</span>
                       </div>
-                      <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="w-full h-2 bg-ink-800 rounded-full overflow-hidden">
                         <motion.div
-                          className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
+                          className="h-full bg-gold-400"
                           animate={{ width: `${progresso}%` }}
                           transition={{ duration: 0.2 }}
                         />
@@ -370,7 +380,7 @@ export default function PainelAdmin() {
                       ? "URL do vídeo (YouTube, etc.)"
                       : "URL do link"
                   }
-                  className="bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                  className="bg-ink-950/60 border border-ink-700 rounded-xl px-4 py-3 text-white placeholder:text-ink-600 focus:outline-none focus:border-gold-400/70 focus:ring-1 focus:ring-gold-400/40 transition"
                 />
               )}
 
@@ -379,7 +389,7 @@ export default function PainelAdmin() {
                 onChange={(e) => atualizarCampo("descricao", e.target.value)}
                 placeholder="Descrição / instruções (opcional)"
                 rows={3}
-                className="bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition resize-y"
+                className="bg-ink-950/60 border border-ink-700 rounded-xl px-4 py-3 text-white placeholder:text-ink-600 focus:outline-none focus:border-gold-400/70 focus:ring-1 focus:ring-gold-400/40 transition resize-y"
               />
             </div>
 
@@ -396,7 +406,6 @@ export default function PainelAdmin() {
                         : "text-rose-400"
                     }`}
                   >
-                    {status.tipo === "sucesso" ? "✅ " : "⚠️ "}
                     {status.texto}
                   </motion.span>
                 )}
@@ -407,7 +416,7 @@ export default function PainelAdmin() {
                   <button
                     type="button"
                     onClick={limparForm}
-                    className="text-slate-400 hover:text-white font-bold py-3 px-5 rounded-xl border border-slate-700 transition active:scale-95"
+                    className="text-ink-400 hover:text-white font-bold py-3 px-5 rounded-xl border border-ink-700 transition active:scale-95"
                   >
                     Cancelar
                   </button>
@@ -415,7 +424,7 @@ export default function PainelAdmin() {
                 <button
                   type="submit"
                   disabled={salvando}
-                  className={`bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 px-7 rounded-xl transition-all shadow-lg shadow-blue-600/25 active:scale-95 ${
+                  className={`bg-gold-400 hover:bg-gold-300 text-ink-950 font-bold py-3 px-7 rounded-xl transition-all shadow-[var(--shadow-gold)] active:scale-95 ${
                     salvando ? "opacity-60 cursor-wait" : ""
                   }`}
                 >
@@ -431,7 +440,7 @@ export default function PainelAdmin() {
 
           {/* LISTA */}
           <div className="mt-6">
-            <h3 className="text-slate-400 font-semibold mb-3 px-1">
+            <h3 className="text-ink-400 font-semibold mb-3 px-1">
               Publicados em {materiaAtiva}
             </h3>
 
@@ -440,12 +449,12 @@ export default function PainelAdmin() {
                 {[0, 1, 2].map((i) => (
                   <div
                     key={i}
-                    className="h-20 rounded-2xl bg-slate-900/50 border border-slate-800 animate-pulse"
+                    className="h-20 rounded-2xl bg-ink-900/50 border border-ink-800 animate-pulse"
                   />
                 ))}
               </div>
             ) : materiais.length === 0 ? (
-              <div className="p-8 rounded-2xl border border-dashed border-slate-800 text-center text-slate-500">
+              <div className="p-8 rounded-2xl border border-dashed border-ink-800 text-center text-ink-500">
                 Nenhum material publicado nesta matéria ainda.
               </div>
             ) : (
@@ -458,7 +467,7 @@ export default function PainelAdmin() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -20 }}
-                      className="flex items-start gap-3 p-4 rounded-2xl bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition group"
+                      className="flex items-start gap-3 p-4 rounded-2xl bg-ink-900/50 border border-ink-800 hover:border-ink-700 transition group"
                     >
                       {/* Reordenar */}
                       <div className="flex flex-col gap-1 pt-0.5">
@@ -466,17 +475,17 @@ export default function PainelAdmin() {
                           onClick={() => mover(indice, -1)}
                           disabled={indice === 0}
                           title="Subir"
-                          className="text-slate-600 hover:text-white disabled:opacity-20 disabled:hover:text-slate-600 leading-none"
+                          className="text-ink-600 hover:text-white disabled:opacity-20 disabled:hover:text-ink-600 leading-none"
                         >
-                          ▲
+                          <ChevronUp size={15} />
                         </button>
                         <button
                           onClick={() => mover(indice, 1)}
                           disabled={indice === materiais.length - 1}
                           title="Descer"
-                          className="text-slate-600 hover:text-white disabled:opacity-20 disabled:hover:text-slate-600 leading-none"
+                          className="text-ink-600 hover:text-white disabled:opacity-20 disabled:hover:text-ink-600 leading-none"
                         >
-                          ▼
+                          <ChevronDown size={15} />
                         </button>
                       </div>
 
@@ -488,19 +497,19 @@ export default function PainelAdmin() {
                           <span className="font-bold text-white">
                             {m.titulo}
                           </span>
-                          <span className="text-[10px] uppercase font-bold tracking-wide bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md">
+                          <span className="text-[10px] uppercase font-bold tracking-wide bg-ink-800 text-ink-300 px-2 py-0.5 rounded-md">
                             {tipoInfo(m.tipo).label}
                           </span>
                         </div>
                         {m.descricao && (
-                          <p className="text-sm text-slate-400 mt-0.5 line-clamp-2">
+                          <p className="text-sm text-ink-400 mt-0.5 line-clamp-2">
                             {m.descricao}
                           </p>
                         )}
-                        <div className="flex items-center gap-2 flex-wrap text-xs text-slate-600 mt-1">
+                        <div className="flex items-center gap-2 flex-wrap text-xs text-ink-600 mt-1">
                           <span>{formatarData(m.criado_em)}</span>
                           {m.arquivo_nome && (
-                            <span className="text-slate-500">
+                            <span className="text-ink-500">
                               · {m.arquivo_nome}
                               {m.arquivo_tamanho
                                 ? ` (${formatarTamanho(m.arquivo_tamanho)})`
@@ -514,16 +523,16 @@ export default function PainelAdmin() {
                         <button
                           onClick={() => iniciarEdicao(m)}
                           title="Editar"
-                          className="text-slate-500 hover:text-blue-400 p-1"
+                          className="text-ink-500 hover:text-gold-400 p-1.5 rounded-lg hover:bg-white/[0.05] transition-colors"
                         >
-                          ✏️
+                          <Pencil size={15} />
                         </button>
                         <button
                           onClick={() => handleExcluir(m)}
                           title="Excluir"
-                          className="text-slate-500 hover:text-rose-400 p-1"
+                          className="text-ink-500 hover:text-rose-400 p-1.5 rounded-lg hover:bg-white/[0.05] transition-colors"
                         >
-                          🗑
+                          <Trash2 size={15} />
                         </button>
                       </div>
                     </motion.li>
