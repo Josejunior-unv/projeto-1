@@ -3,13 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   FileText,
-  Link2,
-  PlayCircle,
   Download,
   Eye,
   Library,
   FilterX,
   Sparkles,
+  PencilRuler,
+  ArrowUpDown,
 } from "lucide-react";
 import { supabase } from "../SUPABASE";
 import { listarMateriais } from "./materiaisService";
@@ -26,16 +26,24 @@ import {
 import { cx } from "./ui/cx";
 
 // ------------------------------------------------------------
-// A biblioteca organiza os materiais publicados em
-// Ano → Tipo (Objetiva/Discursiva) → Matéria, deduzindo ano e
-// tipo do título/descrição de cada material. Assim o professor
-// só precisa nomear bem (ex.: "UERJ 2026 — Discursiva — Física")
-// e a prova cai automaticamente na prateleira certa.
+// BIBLIOTECA UERJ — ambiente exclusivo das provas da UERJ,
+// independente de "Minhas Tarefas". Entram aqui apenas os
+// materiais reconhecidos como PROVA: título/descrição com ano
+// (ex.: 2026) ou com "UERJ". Prateleiras: Ano → Tipo (Objetiva /
+// Discursiva) → Matéria. O professor só precisa nomear bem
+// (ex.: "UERJ 2026 — Discursiva — Física").
 // ------------------------------------------------------------
 
 const TIPOS_PROVA = [
   { id: "objetiva", label: "Objetiva" },
   { id: "discursiva", label: "Discursiva" },
+];
+
+const ORDENACOES = [
+  { id: "ano-desc", label: "Ano (recentes primeiro)" },
+  { id: "ano-asc", label: "Ano (antigas primeiro)" },
+  { id: "titulo", label: "Título (A–Z)" },
+  { id: "publicacao", label: "Publicadas por último" },
 ];
 
 function extrairAno(m) {
@@ -52,18 +60,17 @@ function extrairTipo(m) {
   return null;
 }
 
+// Uma prova é um material com ano identificado OU "UERJ" no texto.
+const ehProva = (item) =>
+  item.anoProva !== null || /uerj/i.test(`${item.titulo} ${item.descricao || ""}`);
+
 const rotuloTipo = (id) =>
-  TIPOS_PROVA.find((t) => t.id === id)?.label ?? "Material";
+  TIPOS_PROVA.find((t) => t.id === id)?.label ?? "Prova";
 
-// Ícone estático por tipo de material (fora do render, exigência do
-// react-hooks/static-components).
-const ICONES_TIPO = { video: PlayCircle, link: Link2, pdf: FileText };
-
-/* Card individual de prova/material */
+/* Card individual de prova */
 function CartaoProva({ item, indice }) {
   const infoMateria = MATERIAS.find((x) => x.nome === item.materia);
   const c = coresDe(infoMateria?.cor);
-  const Icone = ICONES_TIPO[item.tipo] || FileText;
   const ehPdf = item.tipo === "pdf" || /\.pdf(\?|$)/i.test(item.url_arquivo || "");
 
   return (
@@ -73,9 +80,9 @@ function CartaoProva({ item, indice }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ delay: Math.min(indice * 0.03, 0.25), duration: 0.3 }}
-      className="group flex flex-col p-5 rounded-2xl bg-ink-900 border border-white/[0.06]
+      className="group flex flex-col p-5 rounded-2xl bg-ink-900 border border-white/[0.08]
                  shadow-[var(--shadow-card)] transition-all duration-300
-                 hover:border-white/[0.14] hover:-translate-y-1"
+                 hover:border-gold-400/30 hover:-translate-y-1"
     >
       <div className="flex items-start justify-between mb-4">
         <span
@@ -86,10 +93,10 @@ function CartaoProva({ item, indice }) {
             c.texto,
           )}
         >
-          <Icone size={20} strokeWidth={1.9} />
+          <FileText size={20} strokeWidth={1.9} />
         </span>
         {item.anoProva && (
-          <span className="font-display text-sm font-black text-ink-500 tabular-nums">
+          <span className="font-display text-lg font-black text-ink-500 tabular-nums leading-none">
             {item.anoProva}
           </span>
         )}
@@ -138,6 +145,18 @@ function CartaoProva({ item, indice }) {
           </Botao>
         )}
       </div>
+
+      {/* Espaço reservado: resolução online (futuro) */}
+      <div
+        className="flex items-center gap-1.5 mt-2 text-[11px] font-semibold text-ink-500 select-none"
+        title="Em breve você poderá resolver esta prova dentro da plataforma"
+      >
+        <PencilRuler size={12} />
+        Resolver online
+        <span className="ml-auto text-[10px] uppercase tracking-wider bg-white/[0.04] border border-white/[0.06] px-1.5 py-0.5 rounded">
+          Em breve
+        </span>
+      </div>
     </motion.div>
   );
 }
@@ -152,6 +171,7 @@ export default function BibliotecaProvas() {
     "todas",
   );
   const [tipoFiltro, setTipoFiltro] = usePersistedState("bib_tipo", "todos");
+  const [ordenacao, setOrdenacao] = usePersistedState("bib_ordem", "ano-desc");
 
   useEffect(() => {
     let ativo = true;
@@ -177,33 +197,35 @@ export default function BibliotecaProvas() {
     };
   }, []);
 
-  // Enriquecemos cada material com ano e tipo de prova deduzidos.
-  const itens = useMemo(
+  // Só entram na biblioteca os materiais reconhecidos como prova.
+  const provas = useMemo(
     () =>
-      materiais.map((m) => ({
-        ...m,
-        anoProva: extrairAno(m),
-        tipoProva: extrairTipo(m),
-      })),
+      materiais
+        .map((m) => ({
+          ...m,
+          anoProva: extrairAno(m),
+          tipoProva: extrairTipo(m),
+        }))
+        .filter(ehProva),
     [materiais],
   );
 
   const anosDisponiveis = useMemo(
     () =>
-      [...new Set(itens.map((i) => i.anoProva).filter(Boolean))].sort(
+      [...new Set(provas.map((i) => i.anoProva).filter(Boolean))].sort(
         (a, b) => b - a,
       ),
-    [itens],
+    [provas],
   );
 
   const materiasDisponiveis = useMemo(
-    () => [...new Set(itens.map((i) => i.materia).filter(Boolean))],
-    [itens],
+    () => [...new Set(provas.map((i) => i.materia).filter(Boolean))],
+    [provas],
   );
 
-  const filtrados = useMemo(() => {
+  const filtradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
-    return itens.filter((i) => {
+    const lista = provas.filter((i) => {
       if (anoFiltro !== "todos" && i.anoProva !== Number(anoFiltro)) return false;
       if (materiaFiltro !== "todas" && i.materia !== materiaFiltro) return false;
       if (tipoFiltro !== "todos" && i.tipoProva !== tipoFiltro) return false;
@@ -214,22 +236,27 @@ export default function BibliotecaProvas() {
       }
       return true;
     });
-  }, [itens, busca, anoFiltro, materiaFiltro, tipoFiltro]);
 
-  // Prateleiras: anos em ordem decrescente; sem ano identificado → "Outros".
+    const porTitulo = (a, b) => (a.titulo || "").localeCompare(b.titulo || "");
+    if (ordenacao === "titulo") return lista.sort(porTitulo);
+    if (ordenacao === "publicacao")
+      return lista.sort((a, b) => (b.criado_em || "").localeCompare(a.criado_em || ""));
+    const dir = ordenacao === "ano-asc" ? 1 : -1;
+    return lista.sort(
+      (a, b) => ((a.anoProva ?? 0) - (b.anoProva ?? 0)) * dir || porTitulo(a, b),
+    );
+  }, [provas, busca, anoFiltro, materiaFiltro, tipoFiltro, ordenacao]);
+
+  // Prateleiras por ano (ordem acompanha a ordenação escolhida).
   const prateleiras = useMemo(() => {
     const mapa = new Map();
-    filtrados.forEach((i) => {
-      const chave = i.anoProva ?? "outros";
+    filtradas.forEach((i) => {
+      const chave = i.anoProva ?? "sem-ano";
       if (!mapa.has(chave)) mapa.set(chave, []);
       mapa.get(chave).push(i);
     });
-    return [...mapa.entries()].sort((a, b) => {
-      if (a[0] === "outros") return 1;
-      if (b[0] === "outros") return -1;
-      return b[0] - a[0];
-    });
-  }, [filtrados]);
+    return [...mapa.entries()];
+  }, [filtradas]);
 
   const temFiltroAtivo =
     busca.trim() !== "" ||
@@ -248,11 +275,21 @@ export default function BibliotecaProvas() {
     <div className="max-w-5xl">
       <CabecalhoPagina
         titulo="Biblioteca UERJ"
-        descricao="Todas as provas e materiais, organizados por ano, tipo e matéria."
+        descricao="O acervo completo das provas da UERJ — organizado por ano, tipo e matéria."
+        acoes={
+          !carregando &&
+          provas.length > 0 && (
+            <Selo variante="ouro" className="text-xs">
+              {provas.length} {provas.length === 1 ? "prova" : "provas"} ·{" "}
+              {anosDisponiveis.length}{" "}
+              {anosDisponiveis.length === 1 ? "ano" : "anos"}
+            </Selo>
+          )
+        }
       />
 
       {/* BARRA DE FILTROS */}
-      <div className="p-4 rounded-2xl bg-ink-900 border border-white/[0.06] mb-8 space-y-3">
+      <div className="p-4 rounded-2xl bg-ink-900 border border-white/[0.08] shadow-[var(--shadow-card)] mb-10 space-y-3">
         <div className="relative">
           <Search
             size={16}
@@ -272,7 +309,7 @@ export default function BibliotecaProvas() {
         <div className="flex items-center gap-2 flex-wrap">
           {/* Tipo — chips */}
           <div className="flex p-1 gap-0.5 bg-ink-950/60 border border-ink-700 rounded-xl">
-            {[{ id: "todos", label: "Todos" }, ...TIPOS_PROVA].map((t) => (
+            {[{ id: "todos", label: "Todas" }, ...TIPOS_PROVA].map((t) => (
               <button
                 key={t.id}
                 type="button"
@@ -317,6 +354,21 @@ export default function BibliotecaProvas() {
             ))}
           </CampoSelect>
 
+          <label className="flex items-center gap-1.5" aria-label="Ordenar">
+            <ArrowUpDown size={13} className="text-ink-500" />
+            <CampoSelect
+              value={ordenacao}
+              onChange={(e) => setOrdenacao(e.target.value)}
+              className="!w-auto py-2 text-xs"
+            >
+              {ORDENACOES.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+            </CampoSelect>
+          </label>
+
           {temFiltroAtivo && (
             <Botao variante="fantasma" tamanho="sm" onClick={limparFiltros}>
               <FilterX size={14} /> Limpar
@@ -324,31 +376,31 @@ export default function BibliotecaProvas() {
           )}
 
           <span className="ml-auto text-xs text-ink-500 tabular-nums">
-            {filtrados.length}{" "}
-            {filtrados.length === 1 ? "resultado" : "resultados"}
+            {filtradas.length}{" "}
+            {filtradas.length === 1 ? "resultado" : "resultados"}
           </span>
         </div>
       </div>
 
       {/* CONTEÚDO */}
       {carregando ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <Esqueleto key={i} className="h-52" />
+            <Esqueleto key={i} className="h-56" />
           ))}
         </div>
-      ) : filtrados.length === 0 ? (
+      ) : filtradas.length === 0 ? (
         <EstadoVazio
           icone={Library}
           titulo={
             temFiltroAtivo
-              ? "Nenhum material com esses filtros"
-              : "A biblioteca ainda está vazia"
+              ? "Nenhuma prova com esses filtros"
+              : "O acervo ainda está sendo montado"
           }
           descricao={
             temFiltroAtivo
-              ? "Ajuste a pesquisa ou limpe os filtros para ver tudo."
-              : "Quando um professor publicar provas e materiais, eles aparecem aqui."
+              ? "Ajuste a pesquisa ou limpe os filtros para ver todas as provas."
+              : "As provas da UERJ aparecem aqui assim que forem publicadas pela equipe."
           }
           acao={
             temFiltroAtivo && (
@@ -359,7 +411,7 @@ export default function BibliotecaProvas() {
           }
         />
       ) : (
-        <div className="space-y-12">
+        <div className="space-y-14">
           {prateleiras.map(([ano, itensAno]) => {
             // Dentro do ano: Objetiva primeiro, depois Discursiva, depois o resto.
             const grupos = [
@@ -373,26 +425,27 @@ export default function BibliotecaProvas() {
 
             return (
               <section key={ano}>
-                <div className="flex items-baseline gap-3 mb-5">
+                <div className="flex items-baseline gap-3 mb-6">
                   <h2 className="font-display text-3xl font-black tracking-tight text-white tabular-nums">
-                    {ano === "outros" ? "Outros materiais" : ano}
+                    {ano === "sem-ano" ? "UERJ" : ano}
                   </h2>
                   <span className="text-xs text-ink-500 font-semibold">
-                    {itensAno.length} {itensAno.length === 1 ? "item" : "itens"}
+                    {itensAno.length}{" "}
+                    {itensAno.length === 1 ? "prova" : "provas"}
                   </span>
-                  <span className="flex-1 h-px bg-gradient-to-r from-white/[0.08] to-transparent" />
+                  <span className="flex-1 h-px bg-gradient-to-r from-white/[0.1] to-transparent" />
                 </div>
 
-                <div className="space-y-7">
+                <div className="space-y-8">
                   {grupos.map(([tipoGrupo, lista]) => (
                     <div key={tipoGrupo ?? "geral"}>
-                      {tipoGrupo && ano !== "outros" && (
-                        <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-widest font-bold text-ink-500 mb-3">
+                      {tipoGrupo && (
+                        <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-widest font-bold text-ink-500 mb-3.5">
                           <Sparkles size={12} className="text-gold-500" />
                           Prova {rotuloTipo(tipoGrupo)}
                         </p>
                       )}
-                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
                         <AnimatePresence initial={false}>
                           {lista.map((item, i) => (
                             <CartaoProva key={item.id} item={item} indice={i} />

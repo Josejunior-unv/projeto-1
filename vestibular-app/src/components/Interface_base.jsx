@@ -17,12 +17,13 @@ import {
 } from "lucide-react";
 import TarefasFeitas from "./Tarefas_Feitas";
 import Home from "./Home";
+import { BotaoTema } from "./ui";
 import { usePersistedState } from "../hooks/usePersistedState";
 
 // Carregamento sob demanda (code-splitting): as abas mais pesadas — Questões do
 // ENEM, Estatísticas (recharts), Simulado e a Biblioteca — só são baixadas
 // quando abertas.
-const QuestoesEnem = lazy(() => import("./QuestoesEnem"));
+const QuestoesHub = lazy(() => import("./QuestoesHub.jsx"));
 const Estatisticas = lazy(() => import("./estatisticas.jsx"));
 const Simulado = lazy(() => import("./simulado/Simulado.jsx"));
 const BibliotecaProvas = lazy(() => import("./BibliotecaProvas.jsx"));
@@ -38,7 +39,7 @@ const MENU = [
   { aba: "cronograma", icone: LayoutDashboard, label: "Início" },
   { aba: "tarefas", icone: ListChecks, label: "Minhas Tarefas" },
   { aba: "simulados", icone: Timer, label: "Simulados" },
-  { aba: "enem", icone: GraduationCap, label: "Questões ENEM" },
+  { aba: "enem", icone: GraduationCap, label: "Questões" },
   { aba: "materiais", icone: Library, label: "Biblioteca UERJ" },
   { aba: "estatisticas", icone: BarChart3, label: "Estatísticas" },
 ];
@@ -135,18 +136,24 @@ const ConteudoSidebar = ({
       ))}
     </nav>
 
-    <button
-      type="button"
-      onClick={onLogout}
-      title={recolhida ? "Sair da conta" : undefined}
-      className={`mt-6 w-full flex items-center gap-3 rounded-xl text-sm font-semibold text-ink-400
-                  hover:bg-rose-500/10 hover:text-rose-300 transition-colors duration-200 active:scale-[0.98] ${
-                    recolhida ? "justify-center px-0 py-3" : "px-3.5 py-2.5"
-                  }`}
-    >
-      <LogOut size={18} strokeWidth={2} className="shrink-0" />
-      {!recolhida && "Sair da conta"}
-    </button>
+    <div className="mt-6 pt-4 border-t border-white/[0.06] space-y-1">
+      <BotaoTema
+        rotulo={!recolhida}
+        className={recolhida ? "w-full justify-center py-3 rounded-xl" : ""}
+      />
+      <button
+        type="button"
+        onClick={onLogout}
+        title={recolhida ? "Sair da conta" : undefined}
+        className={`w-full flex items-center gap-3 rounded-xl text-sm font-semibold text-ink-400
+                    hover:bg-rose-500/10 hover:text-rose-300 transition-colors duration-200 active:scale-[0.98] ${
+                      recolhida ? "justify-center px-0 py-3" : "px-3.5 py-2.5"
+                    }`}
+      >
+        <LogOut size={18} strokeWidth={2} className="shrink-0" />
+        {!recolhida && "Sair da conta"}
+      </button>
+    </div>
   </div>
 );
 
@@ -191,20 +198,9 @@ function InterfaceBase({ cronograma, userId, onLogout }) {
 
       case "enem":
         return (
-          <div className="max-w-3xl">
-            <div className="mb-6 cursor-default">
-              <h1 className="text-2xl sm:text-[28px] font-black text-white tracking-tight font-display">
-                Banco de Questões ENEM
-              </h1>
-              <p className="text-sm text-ink-400 mt-1.5">
-                Treine com as provas oficiais — correção e estatísticas
-                automáticas.
-              </p>
-            </div>
-            <Suspense fallback={<Carregando texto="Carregando questões..." />}>
-              <QuestoesEnem userId={userId} />
-            </Suspense>
-          </div>
+          <Suspense fallback={<Carregando texto="Abrindo as questões..." />}>
+            <QuestoesHub userId={userId} />
+          </Suspense>
         );
 
       case "materiais":
@@ -284,10 +280,13 @@ function InterfaceBase({ cronograma, userId, onLogout }) {
           >
             <Menu size={20} />
           </button>
-          <span className="font-semibold text-white truncate">{tituloAba}</span>
+          <span className="font-semibold text-white truncate flex-1">
+            {tituloAba}
+          </span>
+          <BotaoTema />
         </header>
 
-        <main className="flex-1 min-h-0 p-5 sm:p-8 lg:p-10 overflow-y-auto">
+        <main className="flex-1 min-h-0 p-5 sm:p-8 lg:p-12 overflow-y-auto">
           <AnimatePresence mode="wait">
             <motion.div
               key={abaAtiva}

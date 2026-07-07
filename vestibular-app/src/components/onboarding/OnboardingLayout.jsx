@@ -23,12 +23,12 @@ export default function OnboardingLayout({
       <div
         aria-hidden
         className="absolute -top-48 -left-48 w-[620px] h-[620px] rounded-full opacity-[0.06] blur-3xl pointer-events-none"
-        style={{ background: "radial-gradient(circle, #F5C042 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, var(--color-gold-400) 0%, transparent 70%)" }}
       />
       <div
         aria-hidden
         className="absolute -bottom-56 -right-40 w-[520px] h-[520px] rounded-full opacity-[0.05] blur-3xl pointer-events-none"
-        style={{ background: "radial-gradient(circle, #F5C042 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, var(--color-gold-400) 0%, transparent 70%)" }}
       />
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.98 }}

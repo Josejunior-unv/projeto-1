@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Sun, Moon } from "lucide-react";
 import { cx } from "./cx";
+import { useTema } from "../../hooks/useTema";
 
 // ============================================================
 // Kit de UI — UERJ Para Todos
@@ -64,9 +65,9 @@ export function Cartao({ className = "", interativo = false, ...props }) {
     <div
       {...props}
       className={cx(
-        "rounded-2xl bg-ink-900 border border-white/[0.06] shadow-[var(--shadow-card)]",
+        "rounded-2xl bg-ink-900 border border-white/[0.08] shadow-[var(--shadow-card)]",
         interativo &&
-          "transition-all duration-300 hover:border-white/[0.12] hover:-translate-y-0.5",
+          "transition-all duration-300 hover:border-white/[0.16] hover:-translate-y-0.5",
         className,
       )}
     />
@@ -205,7 +206,7 @@ export function Modal({ aberto, onFechar, children, className = "" }) {
                 type="button"
                 onClick={onFechar}
                 aria-label="Fechar"
-                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/40 text-ink-300 hover:text-white hover:bg-black/60 transition-colors"
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 text-[#f5f5f5] hover:text-[#fff] hover:bg-black/70 transition-colors"
               >
                 <X size={16} />
               </button>
@@ -303,6 +304,41 @@ export function Indicador({ valor, rotulo, cor = "text-white", className = "" })
 }
 
 /* ---------------------------------------------------------- */
+/* Troca de tema (claro/escuro)                                */
+/* ---------------------------------------------------------- */
+
+export function BotaoTema({ rotulo = false, className = "" }) {
+  const { tema, alternar } = useTema();
+  const escuro = tema === "dark";
+  const titulo = escuro ? "Mudar para o tema claro" : "Mudar para o tema escuro";
+  return (
+    <button
+      type="button"
+      onClick={alternar}
+      title={titulo}
+      aria-label={titulo}
+      className={cx(
+        "inline-flex items-center gap-3 rounded-xl text-sm font-semibold text-ink-400",
+        "hover:text-ink-100 hover:bg-white/[0.05] transition-colors duration-200 active:scale-[0.97]",
+        rotulo ? "px-3.5 py-2.5 w-full" : "p-2",
+        className,
+      )}
+    >
+      <motion.span
+        key={tema}
+        initial={{ rotate: -60, scale: 0.6, opacity: 0 }}
+        animate={{ rotate: 0, scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className="shrink-0 flex"
+      >
+        {escuro ? <Sun size={18} strokeWidth={2} /> : <Moon size={18} strokeWidth={2} />}
+      </motion.span>
+      {rotulo && (escuro ? "Tema claro" : "Tema escuro")}
+    </button>
+  );
+}
+
+/* ---------------------------------------------------------- */
 /* Cabeçalho de página (título + subtítulo padronizados)       */
 /* ---------------------------------------------------------- */
 
@@ -310,15 +346,15 @@ export function CabecalhoPagina({ titulo, descricao, acoes, className = "" }) {
   return (
     <div
       className={cx(
-        "mb-8 flex items-end justify-between gap-4 flex-wrap",
+        "mb-10 flex items-end justify-between gap-4 flex-wrap",
         className,
       )}
     >
       <div>
-        <h1 className="text-2xl sm:text-[28px] font-black text-white tracking-tight font-display">
+        <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight font-display">
           {titulo}
         </h1>
-        {descricao && <p className="text-sm text-ink-400 mt-1.5 max-w-xl">{descricao}</p>}
+        {descricao && <p className="text-sm text-ink-400 mt-2 max-w-xl leading-6">{descricao}</p>}
       </div>
       {acoes && <div className="flex items-center gap-2">{acoes}</div>}
     </div>

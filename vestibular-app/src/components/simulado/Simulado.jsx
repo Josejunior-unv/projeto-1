@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Trophy } from "lucide-react";
 import { buscarTodasQuestoesDoAno } from "../enemService.js";
 import { registrarRespostaEnem } from "../estatisticas.js";
 import { usePersistedState } from "../../hooks/usePersistedState";
@@ -345,7 +346,7 @@ export default function Simulado({ userId }) {
               <div className="flex flex-wrap gap-2">
                 {FILTROS.map((f) => (
                   <Chip key={f.id} ativo={area === f.id} onClick={() => setArea(f.id)}>
-                    {f.icone} {f.label}
+                    {f.label}
                   </Chip>
                 ))}
               </div>
@@ -393,7 +394,7 @@ export default function Simulado({ userId }) {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Chip ativo={ano === "aleatorio"} onClick={() => setAno("aleatorio")}>
-                    🎲 Aleatória
+                    Aleatória
                   </Chip>
                   <select
                     value={ano === "aleatorio" ? "" : ano}
@@ -448,7 +449,7 @@ export default function Simulado({ userId }) {
               disabled={carregando}
               className="w-full bg-gold-400 hover:bg-gold-300 text-ink-950 font-bold py-3.5 rounded-xl transition-all shadow-[var(--shadow-gold)] active:scale-[0.99] disabled:opacity-60 disabled:cursor-wait"
             >
-              {carregando ? "Preparando questões..." : "🚀 Iniciar simulado"}
+              {carregando ? "Preparando questões..." : "Iniciar simulado"}
             </button>
           </div>
         </div>
@@ -474,7 +475,9 @@ export default function Simulado({ userId }) {
           </div>
 
           <div className="p-6 rounded-2xl bg-ink-900/60 border border-ink-800">
-            <h3 className="text-sm font-bold text-ink-200 mb-4">🏆 Ranking pessoal</h3>
+            <h3 className="flex items-center gap-2 text-sm font-bold text-ink-200 mb-4">
+              <Trophy size={15} className="text-gold-400" /> Ranking pessoal
+            </h3>
             {top.length === 0 ? (
               <p className="text-ink-600 text-sm">Faça um simulado para entrar no ranking.</p>
             ) : (
@@ -520,7 +523,7 @@ export default function Simulado({ userId }) {
         {/* Recomendações + histórico */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="p-6 rounded-2xl bg-ink-900/60 border border-ink-800">
-            <h3 className="text-sm font-bold text-ink-200 mb-4">💡 Recomendações de estudo</h3>
+            <h3 className="text-sm font-bold text-ink-200 mb-4">Recomendações de estudo</h3>
             <ul className="space-y-3">
               {recs.map((r, i) => (
                 <li key={i} className="text-sm text-ink-400 leading-relaxed border-l-2 border-gold-400/40 pl-3">
@@ -542,7 +545,7 @@ export default function Simulado({ userId }) {
                     className="flex items-center justify-between gap-2 py-2 px-3 rounded-xl bg-ink-900/50 border border-ink-800"
                   >
                     <span className="flex items-center gap-2 min-w-0">
-                      <span className="text-lg">{medalhaDe(s.pct)?.icone || "📝"}</span>
+                      <span className="text-lg">{medalhaDe(s.pct)?.icone || "•"}</span>
                       <span className="min-w-0">
                         <span className="block text-sm text-ink-200 font-semibold">
                           {s.pct}%{" "}
@@ -609,14 +612,14 @@ export default function Simulado({ userId }) {
                 onClick={() => setRevisaoGrade((v) => !v)}
                 className="text-xs font-semibold text-ink-300 bg-ink-800/60 border border-ink-700 hover:border-gold-400/40 px-3 py-1.5 rounded-lg transition active:scale-95"
               >
-                🧭 Mapa de questões
+                Mapa de questões
               </button>
               <button
                 type="button"
                 onClick={finalizarSimulado}
                 className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 px-4 py-1.5 rounded-lg transition active:scale-95 shadow-lg shadow-emerald-600/20"
               >
-                ✔ Finalizar simulado
+                Finalizar simulado
               </button>
             </div>
           </div>
@@ -694,7 +697,7 @@ export default function Simulado({ userId }) {
               onClick={finalizarSimulado}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold border border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg shadow-emerald-600/30 transition active:scale-95"
             >
-              ✔ Finalizar
+              Finalizar
             </button>
           ) : (
             <button
@@ -759,7 +762,7 @@ export default function Simulado({ userId }) {
               {r.medalhaObj.icone}
             </motion.div>
           ) : (
-            <div className="text-6xl mb-2">📊</div>
+            <div className="text-6xl mb-2" aria-hidden>—</div>
           )}
 
           <p className="text-6xl font-black text-gold-400">

@@ -67,7 +67,7 @@ export default function QuestaoCard({
           {questao.files.map((imagem, index) => (
             <div
               key={index}
-              className="overflow-hidden rounded-xl border border-white/[0.08] bg-black"
+              className="overflow-hidden rounded-xl border border-white/[0.08] bg-ink-950"
             >
               <img
                 src={imagem}

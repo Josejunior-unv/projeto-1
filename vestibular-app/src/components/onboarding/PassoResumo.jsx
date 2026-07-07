@@ -110,7 +110,7 @@ export default function PassoResumo({ cronograma, onBack, onSaveSuccess }) {
           whileTap={{ scale: 0.99 }}
           className="flex-1 bg-gold-400 hover:bg-gold-300 text-ink-950 font-bold py-3 rounded-xl transition-all shadow-[var(--shadow-gold)] disabled:opacity-60 disabled:cursor-wait"
         >
-          {salvando ? "Salvando..." : "🚀 Salvar e ir para o painel"}
+          {salvando ? "Salvando..." : "Salvar e ir para o painel"}
         </motion.button>
       </div>
     </OnboardingLayout>

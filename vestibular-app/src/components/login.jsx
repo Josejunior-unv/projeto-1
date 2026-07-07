@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, Flame, GraduationCap, BookOpenCheck, TrendingUp } from 'lucide-react'
 import { supabase } from '../SUPABASE'
-import { Botao, CampoTexto, Alerta } from './ui'
+import { Botao, CampoTexto, Alerta, BotaoTema } from './ui'
 
 // Traduz as mensagens de erro mais comuns do Supabase para o usuário final.
 function traduzErro(msg = '') {
@@ -119,7 +119,7 @@ function Login() {
   return (
     <div className="min-h-screen bg-ink-950 lg:grid lg:grid-cols-[1.1fr_1fr]">
       {/* ===== PAINEL DA MARCA ===== */}
-      <div className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-black p-12">
+      <div className="tema-escuro-fixo relative hidden lg:flex flex-col justify-between overflow-hidden bg-black p-12">
         {/* brilho dourado ambiente */}
         <div
           aria-hidden
@@ -184,7 +184,8 @@ function Login() {
       </div>
 
       {/* ===== FORMULÁRIO ===== */}
-      <div className="flex items-center justify-center min-h-screen lg:min-h-0 px-4 py-10 sm:px-8">
+      <div className="relative flex items-center justify-center min-h-screen lg:min-h-0 px-4 py-10 sm:px-8">
+        <BotaoTema className="absolute top-4 right-4" />
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}

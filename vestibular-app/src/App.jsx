@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Flame, LogOut } from 'lucide-react'
+import { BotaoTema } from './components/ui'
 import InterfaceBase from './components/Interface_base'
 import Login from './components/login'
 import PainelAdmin from './components/PainelAdmin'
@@ -126,14 +127,17 @@ function App() {
             <Navigate to="/app" replace />
           ) : (
             <div className="bg-ink-950 min-h-screen relative pt-16 pb-10">
-              <button
-                onClick={handleLogout}
-                className="absolute top-4 right-4 z-50 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold
-                           text-ink-300 bg-ink-900 border border-white/[0.08] hover:text-rose-300 hover:border-rose-500/30
-                           transition-all active:scale-95"
-              >
-                <LogOut size={15} /> Sair
-              </button>
+              <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
+                <BotaoTema className="bg-ink-900 border border-white/[0.08] rounded-xl" />
+                <button
+                  onClick={handleLogout}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold
+                             text-ink-300 bg-ink-900 border border-white/[0.08] hover:text-rose-300 hover:border-rose-500/30
+                             transition-all active:scale-95"
+                >
+                  <LogOut size={15} /> Sair
+                </button>
+              </div>
               <PainelAdmin />
             </div>
           )

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Newspaper, Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
 import { supabase } from "../SUPABASE";
 import { PRIORIDADES, prioridadeDe } from "../constants/materias";
 import {
@@ -177,7 +178,8 @@ export default function GerenciarNoticias({ autor }) {
         className="p-6 rounded-3xl bg-ink-900/60 backdrop-blur-xl border border-gold-400/20 shadow-2xl h-fit"
       >
         <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2">
-          📰 {editandoId ? "Editar notícia" : "Nova notícia"}
+          <Newspaper size={18} className="text-gold-400" />{" "}
+          {editandoId ? "Editar notícia" : "Nova notícia"}
         </h2>
 
         <div className="flex flex-col gap-3">
@@ -379,21 +381,21 @@ export default function GerenciarNoticias({ autor }) {
                         title={n.publicado ? "Ocultar" : "Publicar"}
                         className="text-ink-500 hover:text-emerald-400 p-1"
                       >
-                        {n.publicado ? "🙈" : "👁"}
+                        {n.publicado ? <EyeOff size={15} /> : <Eye size={15} />}
                       </button>
                       <button
                         onClick={() => editar(n)}
                         title="Editar"
                         className="text-ink-500 hover:text-gold-400 p-1"
                       >
-                        ✏️
+                        <Pencil size={15} />
                       </button>
                       <button
                         onClick={() => excluir(n.id)}
                         title="Excluir"
                         className="text-ink-500 hover:text-rose-400 p-1"
                       >
-                        🗑
+                        <Trash2 size={15} />
                       </button>
                     </div>
                   </motion.li>

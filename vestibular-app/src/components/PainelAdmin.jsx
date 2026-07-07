@@ -340,7 +340,7 @@ export default function PainelAdmin() {
                   />
                   {arquivo && (
                     <p className="text-xs text-ink-400 mt-2">
-                      📄 {arquivo.name}{" "}
+                      {arquivo.name}{" "}
                       <span className="text-ink-600">
                         ({formatarTamanho(arquivo.size)})
                       </span>

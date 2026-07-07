@@ -51,7 +51,7 @@ function CardKPI({ valor, rotulo, sufixo = "", cor = "text-white", sub }) {
   );
 }
 
-const EIXO = { fill: "#64748b", fontSize: 11, fontWeight: 600 };
+const EIXO = { fill: "var(--color-ink-400)", fontSize: 11, fontWeight: 600 };
 
 export default function Estatisticas({ userId }) {
   const [dados, setDados] = useState(null);
@@ -257,11 +257,11 @@ export default function Estatisticas({ userId }) {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dados.semanal} margin={{ top: 8, right: 4, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.12)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-ink-700)" strokeOpacity={0.5} vertical={false} />
                   <XAxis dataKey="label" tick={EIXO} tickLine={false} axisLine={false} />
                   <YAxis domain={[0, 100]} tick={EIXO} tickLine={false} axisLine={false} width={36} />
                   <Tooltip cursor={{ fill: "rgba(148,163,184,0.08)" }} content={<DicaGrafico sufixo="%" />} />
-                  <Bar dataKey="pct" name="Aproveitamento" fill="#6366f1" radius={[6, 6, 0, 0]} maxBarSize={38} />
+                  <Bar dataKey="pct" name="Aproveitamento" fill="var(--color-gold-400)" radius={[6, 6, 0, 0]} maxBarSize={38} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -279,11 +279,11 @@ export default function Estatisticas({ userId }) {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dados.mensal} margin={{ top: 8, right: 4, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.12)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-ink-700)" strokeOpacity={0.5} vertical={false} />
                   <XAxis dataKey="label" tick={EIXO} tickLine={false} axisLine={false} />
                   <YAxis tick={EIXO} tickLine={false} axisLine={false} width={36} allowDecimals={false} />
                   <Tooltip cursor={{ fill: "rgba(148,163,184,0.08)" }} content={<DicaGrafico />} />
-                  <Bar dataKey="total" name="Questões" fill="#06b6d4" radius={[6, 6, 0, 0]} maxBarSize={38} />
+                  <Bar dataKey="total" name="Questões" fill="var(--color-gold-500)" radius={[6, 6, 0, 0]} maxBarSize={38} />
                 </BarChart>
               </ResponsiveContainer>
             )}
