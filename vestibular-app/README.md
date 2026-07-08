@@ -99,3 +99,37 @@ do WordPress.
 - **Validação:** suíte E2E com Playwright (cadastro → onboarding → banco UERJ
   → resposta → navegação → filtros individuais e combinados → status →
   regressão da pasta) — 15/15 verdes, sem erros de console; lint e build limpos.
+
+## Auditoria profunda de classificação — 08/07/2026 (tarde)
+
+Relato: questões apareciam na disciplina errada (Português no filtro de
+Matemática, História no de Física).
+
+**Causa raiz (não era o filtro — o filtro usa `disciplina` corretamente):**
+o crawler não reconhecia os cadernos discursivos de língua estrangeira
+(`Linguas_estrangeiras.pdf`, `Lingua_Estrangeira.pdf`, `Estrangeiras.pdf`),
+então essas provas ficavam com `disciplina = NULL`. Sem disciplina da prova e
+sem área de rodapé, o classificador chutava entre **todas** as disciplinas, e
+um acerto fraco de palavra-chave jogava textos em espanhol (Isabel Allende,
+tirinhas do Quino) para Matemática/Biologia. Nos Exames Únicos 2022/2023
+(prova única, sem blocos de área no rodapé) o mesmo chute espalhou conteúdo de
+Ciências Humanas em disciplinas de Natureza.
+
+**Correção da origem (pipeline):**
+- `crawler.py`: `ROTULO_DISCIPLINA` passou a mapear "estrangeira(s)" → Português
+  (o caderno é de Linguagens).
+- `classificar.py`: sem área de rodapé e sem disciplina sugerida, **não se
+  chuta mais** entre todas as disciplinas — a questão fica "Não Classificada"
+  (o admin corrige na aba Provas UERJ). Um rótulo errado nunca é melhor que
+  "não classificada".
+
+**Correção do acervo já publicado (`supabase_migration.sql`, parte 11 —
+rodar no SQL Editor, idempotente):** reclassifica as 3 provas de língua
+estrangeira para Português/Linguagens e corrige, um a um (verificados por
+leitura do enunciado), os erros de área cruzada confirmados nos Exames Únicos.
+Após a parte 11: 0 questões de metalinguagem fora de Linguagens e 0 conteúdo
+de Humanas rotulado em Natureza entre os casos detectados.
+
+> **Ação do administrador:** rodar as partes 10 e 11 do `supabase_migration.sql`
+> aplica a correção sem reimportar. Uma reimportação futura (`python main.py`)
+> já nasce correta com os fixes do pipeline.

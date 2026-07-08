@@ -449,6 +449,74 @@ update public.questoes_uerj
        else area end);
 
 -- ============================================================================
+-- PARTE 11 — Cadernos discursivos de Língua Estrangeira mal classificados
+-- (auditoria profunda de 08/07/2026). Idempotente.
+--
+-- CAUSA RAIZ: os PDFs "Linguas_estrangeiras.pdf"/"Lingua_Estrangeira.pdf"/
+-- "Estrangeiras.pdf" (prova discursiva de Língua Portuguesa/Literatura +
+-- Língua Estrangeira) não casavam nenhuma chave do mapa nome→disciplina do
+-- crawler, então a prova ficava com disciplina=NULL e o classificador chutava
+-- entre TODAS as disciplinas. Resultado: questões sobre textos em espanhol
+-- (Isabel Allende, tirinhas do Quino/Gaturro) foram rotuladas como Matemática
+-- e Biologia — e apareciam nesses filtros. O crawler (ROTULO_DISCIPLINA) e o
+-- classificador (não chuta mais sem área) foram corrigidos na origem; este
+-- bloco conserta o acervo já publicado sem exigir reimportação.
+-- ------------------------------------------------------------
+
+-- 11a) Todas as questões desses 3 cadernos são de LINGUAGENS. As que ficaram
+--      em outras áreas viram Português (interpretação); Espanhol/Inglês/
+--      Francês/Português já corretas são preservadas.
+update public.questoes_uerj
+   set disciplina = 'Português',
+       area = 'Linguagens',
+       assunto = case when assunto is null or assunto = 'Não Classificado'
+                      then 'Interpretação de Texto' else assunto end,
+       classificada = true
+ where prova_id in (7, 67, 390)
+   and disciplina in ('Matemática', 'Biologia', 'Não Classificada');
+
+update public.questoes_uerj
+   set area = 'Linguagens'
+ where prova_id in (7, 67, 390);
+
+update public.provas_uerj
+   set disciplina = 'Português'
+ where id in (7, 67, 390) and disciplina is null;
+
+-- 11b) Erros pontuais de área cruzada confirmados por leitura do enunciado:
+--      metalinguagem gramatical/literária = Português; texto em espanhol =
+--      Espanhol. (Todos verificados um a um; não é reclassificação em massa.)
+--      6713/6323: "coesão textual"/"modalização do verbo parecer" → Português
+--      6504: "emprego dos dois-pontos estabelece coesão" → Português
+--      6763: poema sobre Lampião (cangaço/sertão) → Português (Literatura)
+update public.questoes_uerj
+   set disciplina = 'Português', area = 'Linguagens', classificada = true
+ where id in (6713, 6323, 6504, 6763);
+
+--      7986: "habla de la mujer del coronel" (García Márquez, espanhol) → Espanhol
+update public.questoes_uerj
+   set disciplina = 'Espanhol', area = 'Linguagens', classificada = true
+ where id = 7986;
+
+-- 11c) Conteúdo de Ciências Humanas rotulado como Natureza nos Exames Únicos
+--      2022/2023 (a detecção de área por rodapé falha no formato de prova
+--      única, e o chute por palavra-chave caiu na área errada). Verificados:
+--      7143: Tratado de Versalhes / Guilherme II (1ª Guerra) → História
+--      8024: restos mortais de Alexandre Dumas no Panteão (memória) → História
+--      8028: zoológico humano de Tervuren / Leopoldo II (colonialismo) → História
+--      7955: mapa do credo predominante por Estado → Geografia
+--      7957: bandeira Whipala / multiculturalismo (identidade) → Sociologia
+update public.questoes_uerj
+   set disciplina = 'História', area = 'Ciências Humanas', classificada = true
+ where id in (7143, 8024, 8028);
+update public.questoes_uerj
+   set disciplina = 'Geografia', area = 'Ciências Humanas', classificada = true
+ where id = 7955;
+update public.questoes_uerj
+   set disciplina = 'Sociologia', area = 'Ciências Humanas', classificada = true
+ where id = 7957;
+
+-- ============================================================================
 -- Verificação rápida (deve retornar as 4 linhas abaixo sem erro):
 select 'materiais_estudo.tipo' as ok
   from information_schema.columns

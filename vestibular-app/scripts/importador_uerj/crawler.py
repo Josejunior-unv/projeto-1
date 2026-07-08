@@ -84,6 +84,14 @@ ROTULO_DISCIPLINA = {
     "lp ": "Português",  # "LP.pdf" normalizado vira "lp pdf"
     "ingles": "Inglês", "espanhol": "Espanhol", "frances": "Francês",
     "filosofia": "Filosofia", "sociologia": "Sociologia", "redacao": "Redação",
+    # Caderno discursivo de língua estrangeira ("Linguas_estrangeiras.pdf",
+    # "Lingua_Estrangeira.pdf", "Estrangeiras.pdf"): mistura interpretação em
+    # Português + questões em espanhol/inglês/francês. Sem esta chave, a prova
+    # ficava com disciplina=None e o classificador chutava entre TODAS as
+    # disciplinas — jogando textos em espanhol para Matemática/Biologia. É um
+    # caderno de LINGUAGENS: rotulamos como Português (interpretação), o que
+    # mantém a área correta e nunca vaza para outra área.
+    "estrangeira": "Português", "estrangeiras": "Português",
 }
 
 

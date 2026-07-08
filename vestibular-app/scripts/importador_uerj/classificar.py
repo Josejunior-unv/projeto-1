@@ -242,8 +242,22 @@ def classificar(questao, disciplina_sugerida=None):
             "classificada": True,
         }
 
-    # 3) Palavras-chave, restritas à área impressa na página (quando há).
-    candidatas = DISCIPLINAS_POR_AREA.get(area) or list(MAPA.keys())
+    # 3) Palavras-chave, restritas à área impressa na página.
+    # SEM área de rodapé (e sem disciplina sugerida da prova), NÃO se chuta
+    # entre todas as disciplinas: um acerto fraco de palavra-chave jogava
+    # textos em espanhol para "Matemática". Melhor deixar "Não Classificada"
+    # (o admin corrige na aba Provas UERJ) do que rotular errado.
+    candidatas = DISCIPLINAS_POR_AREA.get(area)
+    if not candidatas:
+        return {
+            "disciplina": "Não Classificada",
+            "assunto": "Não Classificado",
+            "subassunto": None,
+            "area": area,
+            "dificuldade": _dificuldade(questao),
+            "habilidades": _habilidades(alvo),
+            "classificada": False,
+        }
     pontos, disciplina, assunto = _melhor_por_palavras(alvo, candidatas)
 
     # Exige confiança mínima: 1 palavra fraca não classifica sozinha,
