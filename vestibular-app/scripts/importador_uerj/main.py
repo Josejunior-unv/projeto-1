@@ -293,6 +293,20 @@ def main():
     from publicar import Publicador  # importa só quando vai usar credenciais
 
     pub = Publicador()
+
+    # Parte 8 da migration presente? Sem ela não existe a coluna `area` nem
+    # a chave única por idioma — publica DEGRADADO (sem area; 1 questão por
+    # número) para não bloquear a correção dos dados críticos. Rodar a
+    # migration e reimportar completa o acervo.
+    migration_v8 = pub.coluna_existe("questoes_uerj", "area")
+    if not migration_v8:
+        log.warning(
+            "Parte 8 da migration AUSENTE no banco: publicando sem a coluna "
+            "'area' e mantendo só 1 versão de idioma por número de questão. "
+            "Rode o supabase_migration.sql e execute o pipeline de novo para "
+            "completar (espanhol/francês + área)."
+        )
+
     pub.registrar_log("info", "importacao_iniciada",
                       {"provas": len(resultado), "questoes": total_q})
 
@@ -317,15 +331,24 @@ def main():
                 "status": "processada" if questoes else "importada",
             })
 
+            fila_questoes = questoes
+            if not migration_v8:
+                # Sem a chave única por idioma: fica a 1ª versão de cada
+                # número (as demais línguas entram quando a migration rodar).
+                unicos = {}
+                for q in questoes:
+                    unicos.setdefault(q["numero"], q)
+                fila_questoes = list(unicos.values())
+
             linhas_q = []
-            for q in questoes:
+            for q in fila_questoes:
                 urls_imagens = []
                 for img in q["imagens"][:6]:  # limite defensivo por questão
                     nome = Path(img).name
                     urls_imagens.append(
                         pub.enviar_arquivo(img, f"imagens/{nome}")
                     )
-                linhas_q.append({
+                linha_q = {
                     "prova_id": linha["id"],
                     "numero": q["numero"],
                     "enunciado": q["enunciado"][:8000],
@@ -341,7 +364,10 @@ def main():
                     "pagina": q["pagina"],
                     "url_original": q["url_original"],
                     "classificada": q["classificada"],
-                })
+                }
+                if not migration_v8:
+                    linha_q.pop("area")
+                linhas_q.append(linha_q)
             # Substituição total: apaga as questões antigas da prova e insere
             # as novas — garante que reclassificações/correções de extração
             # não deixem linhas obsoletas para trás.

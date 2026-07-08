@@ -95,6 +95,14 @@ class Publicador:
             raise RuntimeError(f"{tabela} {resp.status_code}: {resp.text[:300]}")
         return resp.json()
 
+    def coluna_existe(self, tabela, coluna):
+        """True se a coluna existe (sonda a parte 8 da migration)."""
+        resp = self.sessao.get(
+            f"{self.base}/rest/v1/{tabela}?select={coluna}&limit=1",
+            timeout=TIMEOUT_HTTP,
+        )
+        return resp.status_code < 300
+
     def upsert_prova(self, prova):
         return self._upsert("provas_uerj", [prova], "hash_sha256")[0]
 
