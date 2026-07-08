@@ -291,14 +291,18 @@ export default function BancoQuestoesUerj({
 }) {
   const [opcoes, setOpcoes] = useState({ disciplinas: [], assuntos: [], anos: [] });
   const [busca, setBusca] = useState(filtrosIniciais.busca || "");
-  // Filtros: padrão < salvos < iniciais (pasta de matéria / atalho de
-  // revisão). Os iniciais SEMPRE prevalecem sobre os salvos — senão abrir a
-  // pasta "Física" mostraria o último filtro usado, não Física.
-  const [filtros, setFiltros] = useState(() => ({
-    ...FILTROS_PADRAO,
-    ...filtrosGuardados(),
-    ...filtrosIniciais,
-  }));
+  // Filtros: quando a tela é aberta por uma pasta de matéria ou atalho de
+  // revisão (filtrosIniciais), parte do PADRÃO + iniciais — misturar os
+  // filtros salvos da sessão anterior (assunto/área/ano de OUTRA matéria)
+  // gerava combinações impossíveis que retornavam 0 questões. Sem iniciais,
+  // restaura os salvos normalmente.
+  const [filtros, setFiltros] = useState(() => {
+    const iniciais = { ...filtrosIniciais };
+    delete iniciais.busca; // busca tem estado próprio
+    return Object.keys(iniciais).length
+      ? { ...FILTROS_PADRAO, ...iniciais }
+      : { ...FILTROS_PADRAO, ...filtrosGuardados() };
+  });
   useEffect(() => {
     try {
       localStorage.setItem(CHAVE_FILTROS, JSON.stringify(filtros));
@@ -396,6 +400,10 @@ export default function BancoQuestoesUerj({
   if (aberta) {
     return (
       <PaginaQuestao
+        // A key força o remount ao trocar de questão: sem ela, os estados
+        // internos (resposta, tempo, denúncia) da questão anterior vazavam
+        // para a seguinte, que aparecia "já respondida" com a letra errada.
+        key={aberta.questao.id}
         questao={aberta.questao}
         userId={userId}
         posicao={aberta.posicao}

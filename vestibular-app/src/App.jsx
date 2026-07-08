@@ -25,7 +25,7 @@ function App() {
         .from('profiles')
         .select('cargo')
         .eq('user_id', userId)
-        .single()
+        .maybeSingle() // aluno recém-criado não tem linha em profiles — sem 406
 
       setCargo(perfil?.cargo ?? 'aluno')
     } catch (error) {
@@ -39,7 +39,7 @@ function App() {
         .from('cronogramas')
         .select('dados_cronograma')
         .eq('user_id', userId)
-        .single()
+        .maybeSingle() // primeiro acesso ainda não tem cronograma — sem 406
 
       if (tabela && tabela.dados_cronograma) {
         setCronograma(tabela.dados_cronograma)

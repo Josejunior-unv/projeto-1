@@ -262,6 +262,11 @@ def main():
                 q["numero"] in respostas
                 and q.get("alternativas")
                 and not q.get("idioma")
+                # A disciplina classificada também bloqueia: quando só UMA
+                # versão de idioma foi extraída, o número não se repete e o
+                # rodapé pode não ter marcado o idioma — mas o gabarito da
+                # edição pode ser a coluna de OUTRA língua.
+                and q.get("disciplina") not in ("Inglês", "Espanhol", "Francês")
                 and q["numero"] not in repetidos
             ):
                 q["resposta"] = respostas[q["numero"]]

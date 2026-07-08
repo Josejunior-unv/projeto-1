@@ -408,6 +408,47 @@ create policy "respostas select proprio" on public.questoes_respondidas
   for select to authenticated using (auth.uid() = usuario_id);
 
 -- ============================================================================
+-- PARTE 10 — Correções de dados do acervo UERJ (auditoria de 08/07/2026).
+-- Idempotente: rodar de novo não muda nada.
+-- ============================================================================
+
+-- 10a) Questões de língua estrangeira NUNCA têm gabarito: a coluna do
+--      gabarito oficial é por idioma, e o pipeline pode ter casado a coluna
+--      de outra língua quando só uma versão foi extraída. Melhor sem
+--      correção do que corrigir o aluno com a resposta de outro idioma.
+--      (O pipeline foi corrigido para não reintroduzir; isto limpa o legado.)
+update public.questoes_uerj
+   set resposta = null
+ where disciplina in ('Inglês', 'Espanhol', 'Francês')
+   and resposta is not null;
+
+-- 10b) Área canônica derivada da disciplina (o rodapé de PDFs antigos traz a
+--      forma combinada "Ciências da Natureza e Matemática" ou nada).
+update public.questoes_uerj
+   set area = case
+       when disciplina in ('Português','Inglês','Espanhol','Francês','Redação')
+         then 'Linguagens'
+       when disciplina = 'Matemática' then 'Matemática'
+       when disciplina in ('Biologia','Física','Química')
+         then 'Ciências da Natureza'
+       when disciplina in ('História','Geografia','Filosofia','Sociologia')
+         then 'Ciências Humanas'
+       else area
+     end
+ where disciplina is not null
+   and disciplina <> 'Não Classificada'
+   and (area is null or area = 'Ciências da Natureza e Matemática'
+        or area is distinct from case
+       when disciplina in ('Português','Inglês','Espanhol','Francês','Redação')
+         then 'Linguagens'
+       when disciplina = 'Matemática' then 'Matemática'
+       when disciplina in ('Biologia','Física','Química')
+         then 'Ciências da Natureza'
+       when disciplina in ('História','Geografia','Filosofia','Sociologia')
+         then 'Ciências Humanas'
+       else area end);
+
+-- ============================================================================
 -- Verificação rápida (deve retornar as 4 linhas abaixo sem erro):
 select 'materiais_estudo.tipo' as ok
   from information_schema.columns

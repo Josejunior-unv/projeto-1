@@ -54,6 +54,17 @@ export default function QuestaoCard({
         </div>
       )}
 
+      {/* Sem enunciado extraído (PDFs antigos/diagramados): avisa em vez de
+          mostrar um card mudo. */}
+      {!questao.context &&
+        (!questao.files || questao.files.length === 0) &&
+        !questao.alternativesIntroduction && (
+          <p className="mb-6 px-4 py-3 rounded-xl bg-amber-500/[0.07] border border-amber-500/25 text-amber-200/90 text-sm leading-6">
+            O enunciado desta questão não pôde ser extraído do PDF original —
+            consulte a prova completa pelo botão "Prova original".
+          </p>
+        )}
+
       {/* Comando/pergunta em destaque, quando a API fornece */}
       {questao.alternativesIntroduction && (
         <p className="text-white text-[15px] font-semibold leading-7 mb-6">
@@ -129,7 +140,14 @@ export default function QuestaoCard({
                   {alt.letter}
                 </span>
                 <span className="text-sm leading-6 text-ink-200 pt-1 flex-1">
-                  {alt.text}
+                  {alt.text?.trim() ? (
+                    alt.text
+                  ) : (
+                    <em className="text-ink-400">
+                      Texto da alternativa disponível apenas na prova original
+                      (PDF).
+                    </em>
+                  )}
                 </span>
                 {revelar && correta && (
                   <Check size={18} className="shrink-0 mt-1.5 text-emerald-400" />

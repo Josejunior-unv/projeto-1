@@ -259,7 +259,10 @@ def classificar(questao, disciplina_sugerida=None):
         "disciplina": disciplina if classificada else "Não Classificada",
         "assunto": (assunto or "Não Classificado") if classificada else "Não Classificado",
         "subassunto": None,
-        "area": area,
+        # Com disciplina conhecida, a área canônica vem dela — o rodapé pode
+        # trazer a forma combinada ("Ciências da Natureza e Matemática") ou
+        # estar ausente em PDFs antigos.
+        "area": (_area_da_disciplina(disciplina) if classificada else None) or area,
         "dificuldade": _dificuldade(questao),
         "habilidades": _habilidades(alvo),
         "classificada": classificada,

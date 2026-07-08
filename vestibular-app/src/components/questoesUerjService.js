@@ -1,4 +1,5 @@
 import { supabase } from "../SUPABASE";
+import { areaDaDisciplina } from "../constants/areasConhecimento";
 
 // Camada única de acesso às provas/questões da UERJ importadas pelo
 // pipeline (scripts/importador_uerj). Todas as funções degradam com
@@ -125,6 +126,8 @@ export async function corrigirClassificacao(id, disciplina, assunto) {
     .update({
       disciplina,
       assunto: assunto || "Não Classificado",
+      // Mantém a área coerente com a disciplina corrigida.
+      area: areaDaDisciplina(disciplina)?.nome ?? null,
       classificada: true,
     })
     .eq("id", id);
