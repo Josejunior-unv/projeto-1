@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../SUPABASE";
 import { listarMateriais } from "./materiaisService";
+import { listarProvasUerj } from "./questoesUerjService";
 import { MATERIAS, coresDe } from "../constants/materias";
 import { usePersistedState } from "../hooks/usePersistedState";
 import {
@@ -173,13 +174,18 @@ export default function BibliotecaProvas() {
   const [tipoFiltro, setTipoFiltro] = usePersistedState("bib_tipo", "todos");
   const [ordenacao, setOrdenacao] = usePersistedState("bib_ordem", "ano-desc");
 
+  const [provasImportadas, setProvasImportadas] = useState([]);
+
   useEffect(() => {
     let ativo = true;
-    listarMateriais().then(({ data }) => {
-      if (!ativo) return;
-      setMateriais(data);
-      setCarregando(false);
-    });
+    Promise.all([listarMateriais(), listarProvasUerj()]).then(
+      ([materiaisRes, uerjRes]) => {
+        if (!ativo) return;
+        setMateriais(materiaisRes.data);
+        setProvasImportadas(uerjRes.data);
+        setCarregando(false);
+      },
+    );
 
     const canal = supabase
       .channel("biblioteca_materiais")
@@ -197,18 +203,37 @@ export default function BibliotecaProvas() {
     };
   }, []);
 
-  // Só entram na biblioteca os materiais reconhecidos como prova.
-  const provas = useMemo(
-    () =>
-      materiais
-        .map((m) => ({
-          ...m,
-          anoProva: extrairAno(m),
-          tipoProva: extrairTipo(m),
-        }))
-        .filter(ehProva),
-    [materiais],
-  );
+  // Acervo = provas publicadas pelos professores (materiais reconhecidos
+  // como prova) + provas importadas do site da UERJ pelo pipeline.
+  const provas = useMemo(() => {
+    const doProfessor = materiais
+      .map((m) => ({
+        ...m,
+        anoProva: extrairAno(m),
+        tipoProva: extrairTipo(m),
+      }))
+      .filter(ehProva);
+
+    const importadas = provasImportadas.map((p) => ({
+      id: `uerj-${p.id}`,
+      titulo: p.titulo,
+      descricao: p.fase ? `UERJ · ${p.fase}` : "UERJ",
+      materia: p.disciplina || null,
+      tipo: "pdf",
+      url_arquivo: p.pdf_url || p.url_original,
+      arquivo_nome: null,
+      criado_em: p.criado_em,
+      anoProva: p.ano || null,
+      tipoProva:
+        p.tipo === "qualificacao"
+          ? "objetiva"
+          : p.tipo === "discursivo"
+            ? "discursiva"
+            : null,
+    }));
+
+    return [...importadas, ...doProfessor];
+  }, [materiais, provasImportadas]);
 
   const anosDisponiveis = useMemo(
     () =>

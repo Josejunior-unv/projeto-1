@@ -184,12 +184,101 @@ $$;
 grant execute on function public.admin_listar_usuarios() to authenticated;
 grant execute on function public.admin_definir_cargo(uuid, text) to authenticated;
 
+-- 7) PROVAS DA UERJ — alimentadas pelo pipeline de importação
+--    (scripts/importador_uerj). Alunos LEEM; escrita é do pipeline (service
+--    role) ou de um admin logado. Ver scripts/importador_uerj/README.md.
+
+create table if not exists public.provas_uerj (
+  id bigint generated always as identity primary key,
+  ano integer not null,
+  tipo text not null default 'desconhecido',  -- qualificacao | discursivo | gabarito | padrao_resposta | outro
+  fase text,                                  -- 1EQ | 2EQ | ED | null
+  disciplina text,                            -- para provas discursivas por matéria
+  titulo text not null,
+  url_original text not null,
+  pdf_url text,                               -- URL pública (Storage do Supabase ou a própria origem)
+  storage_path text,
+  hash_sha256 text unique,
+  paginas integer,
+  status text default 'importada',            -- importada | processada | erro
+  criado_em timestamptz default now()
+);
+create index if not exists provas_uerj_ano_idx on public.provas_uerj (ano desc);
+
+create table if not exists public.questoes_uerj (
+  id bigint generated always as identity primary key,
+  prova_id bigint references public.provas_uerj(id) on delete cascade,
+  numero integer not null,
+  enunciado text not null,
+  alternativas jsonb default '[]'::jsonb,     -- [{"letra":"A","texto":"..."}]
+  resposta text,                              -- letra oficial, quando o gabarito foi casado
+  disciplina text default 'Não Classificada',
+  assunto text default 'Não Classificado',
+  subassunto text,
+  dificuldade text,                           -- facil | media | dificil
+  habilidades text[] default '{}',
+  imagens jsonb default '[]'::jsonb,          -- URLs públicas das figuras da questão
+  pagina integer,                             -- página do PDF de origem
+  url_original text,
+  classificada boolean default false,
+  criado_em timestamptz default now(),
+  unique (prova_id, numero)
+);
+create index if not exists questoes_uerj_disciplina_idx on public.questoes_uerj (disciplina);
+create index if not exists questoes_uerj_prova_idx on public.questoes_uerj (prova_id);
+
+create table if not exists public.uerj_import_logs (
+  id bigint generated always as identity primary key,
+  nivel text default 'info',                  -- info | aviso | erro
+  evento text not null,
+  detalhes jsonb,
+  criado_em timestamptz default now()
+);
+
+-- RLS: conteúdo público para usuários logados; escrita apenas de admins
+-- (o pipeline usa a service role key, que ignora RLS por definição).
+alter table public.provas_uerj enable row level security;
+alter table public.questoes_uerj enable row level security;
+alter table public.uerj_import_logs enable row level security;
+
+drop policy if exists "ler provas uerj" on public.provas_uerj;
+create policy "ler provas uerj" on public.provas_uerj for select using (true);
+
+drop policy if exists "admin gerencia provas uerj" on public.provas_uerj;
+create policy "admin gerencia provas uerj" on public.provas_uerj for all
+  using (exists (select 1 from public.profiles p
+                 where p.user_id = auth.uid() and p.cargo = 'admin'))
+  with check (exists (select 1 from public.profiles p
+                      where p.user_id = auth.uid() and p.cargo = 'admin'));
+
+drop policy if exists "ler questoes uerj" on public.questoes_uerj;
+create policy "ler questoes uerj" on public.questoes_uerj for select using (true);
+
+drop policy if exists "admin gerencia questoes uerj" on public.questoes_uerj;
+create policy "admin gerencia questoes uerj" on public.questoes_uerj for all
+  using (exists (select 1 from public.profiles p
+                 where p.user_id = auth.uid() and p.cargo = 'admin'))
+  with check (exists (select 1 from public.profiles p
+                      where p.user_id = auth.uid() and p.cargo = 'admin'));
+
+drop policy if exists "admin le logs uerj" on public.uerj_import_logs;
+create policy "admin le logs uerj" on public.uerj_import_logs for select
+  using (exists (select 1 from public.profiles p
+                 where p.user_id = auth.uid() and p.cargo = 'admin'));
+
+drop policy if exists "admin escreve logs uerj" on public.uerj_import_logs;
+create policy "admin escreve logs uerj" on public.uerj_import_logs for insert to authenticated
+  with check (exists (select 1 from public.profiles p
+                      where p.user_id = auth.uid() and p.cargo = 'admin'));
+
 -- ============================================================================
--- Verificação rápida (deve retornar as 3 linhas abaixo sem erro):
+-- Verificação rápida (deve retornar as 4 linhas abaixo sem erro):
 select 'materiais_estudo.tipo' as ok
   from information_schema.columns
   where table_name = 'materiais_estudo' and column_name = 'tipo'
 union all select 'tabela tarefas_status' from information_schema.tables
   where table_name = 'tarefas_status'
 union all select 'tabela noticias' from information_schema.tables
-  where table_name = 'noticias';
+  where table_name = 'noticias'
+union all select 'tabelas provas/questoes uerj' from information_schema.tables
+  where table_name = 'questoes_uerj';

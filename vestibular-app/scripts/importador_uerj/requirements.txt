@@ -1,0 +1,10 @@
+requests>=2.31
+truststore>=0.9
+beautifulsoup4>=4.12
+PyMuPDF>=1.24
+pdfplumber>=0.11
+tqdm>=4.66
+
+# OCR opcional (provas escaneadas): descomente e instale o Tesseract-OCR
+# pytesseract>=0.3.10
+# Pillow>=10.0

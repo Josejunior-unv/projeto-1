@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -8,27 +8,42 @@ import {
   Loader2,
 } from "lucide-react";
 import { MATERIAS, coresDe } from "../constants/materias";
+import { contarQuestoesPorDisciplina } from "./questoesUerjService";
 import { usePersistedState } from "../hooks/usePersistedState";
 import { CabecalhoPagina, EstadoVazio, Selo } from "./ui";
 import { cx } from "./ui/cx";
 
 const QuestoesEnem = lazy(() => import("./QuestoesEnem"));
+const QuestoesUerj = lazy(() => import("./QuestoesUerj"));
 
 // ------------------------------------------------------------
 // Hub da área de Questões: o banco oficial do ENEM em destaque
-// e uma pasta por matéria — estrutura pronta para receber os
-// bancos próprios de questões da equipe. Enquanto não houver
-// conteúdo, cada pasta mostra um estado vazio elegante.
+// e uma pasta por matéria com as questões da UERJ importadas
+// pelo pipeline (scripts/importador_uerj). Pastas sem conteúdo
+// mostram um estado vazio elegante.
 // ------------------------------------------------------------
 
-// Quantidade de questões próprias por matéria. Quando os bancos
-// forem criados, basta alimentar este mapa (ou trocá-lo por uma
-// consulta) que os cards e contadores refletem sozinhos.
-const QUESTOES_POR_MATERIA = {};
+const CarregandoInterno = ({ texto }) => (
+  <div className="mt-16 flex flex-col items-center gap-3 text-ink-400">
+    <Loader2 size={22} className="animate-spin text-gold-400" />
+    <span className="text-sm">{texto}</span>
+  </div>
+);
 
 export default function QuestoesHub({ userId }) {
   // null = hub · "enem" = banco ENEM · nome de matéria = pasta aberta
   const [pasta, setPasta] = usePersistedState("questoes_pasta", null);
+  const [contagens, setContagens] = useState({});
+
+  useEffect(() => {
+    let ativo = true;
+    contarQuestoesPorDisciplina().then(({ contagens: c }) => {
+      if (ativo) setContagens(c);
+    });
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   /* ---------- BANCO ENEM ---------- */
   if (pasta === "enem") {
@@ -48,25 +63,18 @@ export default function QuestoesHub({ userId }) {
             Treine com as provas oficiais — correção e estatísticas automáticas.
           </p>
         </div>
-        <Suspense
-          fallback={
-            <div className="mt-16 flex flex-col items-center gap-3 text-ink-400">
-              <Loader2 size={22} className="animate-spin text-gold-400" />
-              <span className="text-sm">Carregando questões...</span>
-            </div>
-          }
-        >
+        <Suspense fallback={<CarregandoInterno texto="Carregando questões..." />}>
           <QuestoesEnem userId={userId} />
         </Suspense>
       </div>
     );
   }
 
-  /* ---------- PASTA DE MATÉRIA (ainda sem conteúdo) ---------- */
+  /* ---------- PASTA DE MATÉRIA (questões UERJ) ---------- */
   if (pasta) {
     const mat = MATERIAS.find((m) => m.nome === pasta);
     const c = coresDe(mat?.cor);
-    const qtd = QUESTOES_POR_MATERIA[pasta] ?? 0;
+    const qtd = contagens[pasta] ?? 0;
     return (
       <div className="max-w-3xl">
         <button
@@ -76,7 +84,7 @@ export default function QuestoesHub({ userId }) {
           <ArrowLeft size={16} /> Todas as pastas
         </button>
 
-        <div className="flex items-center gap-3.5 mb-8">
+        <div className="flex items-center gap-3.5 mb-6">
           <span
             className={cx(
               "w-13 h-13 p-3 flex items-center justify-center rounded-2xl text-2xl border",
@@ -91,24 +99,30 @@ export default function QuestoesHub({ userId }) {
               {pasta}
             </h1>
             <p className="text-xs text-ink-500 mt-0.5 tabular-nums">
-              {qtd} {qtd === 1 ? "questão" : "questões"}
+              {qtd} {qtd === 1 ? "questão da UERJ" : "questões da UERJ"}
             </p>
           </div>
         </div>
 
-        <EstadoVazio
-          icone={FolderOpen}
-          titulo="Nenhuma questão adicionada ainda"
-          descricao={`As questões de ${pasta} aparecem aqui assim que a equipe publicar. Enquanto isso, treine no banco oficial do ENEM.`}
-          acao={
-            <button
-              onClick={() => setPasta("enem")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-gold-400 text-ink-950 hover:bg-gold-300 shadow-[var(--shadow-gold)] transition-all active:scale-[0.97]"
-            >
-              <GraduationCap size={16} /> Treinar no banco ENEM
-            </button>
-          }
-        />
+        {qtd > 0 ? (
+          <Suspense fallback={<CarregandoInterno texto="Abrindo as questões..." />}>
+            <QuestoesUerj disciplina={pasta} userId={userId} />
+          </Suspense>
+        ) : (
+          <EstadoVazio
+            icone={FolderOpen}
+            titulo="Nenhuma questão adicionada ainda"
+            descricao={`As questões de ${pasta} aparecem aqui assim que a equipe importar as provas da UERJ. Enquanto isso, treine no banco oficial do ENEM.`}
+            acao={
+              <button
+                onClick={() => setPasta("enem")}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-gold-400 text-ink-950 hover:bg-gold-300 shadow-[var(--shadow-gold)] transition-all active:scale-[0.97]"
+              >
+                <GraduationCap size={16} /> Treinar no banco ENEM
+              </button>
+            }
+          />
+        )}
       </div>
     );
   }
@@ -118,7 +132,7 @@ export default function QuestoesHub({ userId }) {
     <div className="max-w-5xl">
       <CabecalhoPagina
         titulo="Questões"
-        descricao="Escolha uma pasta para treinar — o banco oficial do ENEM já está completo, e as pastas por matéria receberão questões da equipe."
+        descricao="Escolha uma pasta para treinar — o banco oficial do ENEM completo e as questões das provas da UERJ, organizadas por matéria."
       />
 
       {/* DESTAQUE — banco ENEM */}
@@ -164,13 +178,13 @@ export default function QuestoesHub({ userId }) {
 
       {/* PASTAS POR MATÉRIA */}
       <p className="text-[11px] uppercase tracking-widest font-bold text-ink-500 mb-4">
-        Bancos por matéria
+        Questões da UERJ por matéria
       </p>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
         <AnimatePresence initial={false}>
           {MATERIAS.map((m, i) => {
             const c = coresDe(m.cor);
-            const qtd = QUESTOES_POR_MATERIA[m.nome] ?? 0;
+            const qtd = contagens[m.nome] ?? 0;
             return (
               <motion.button
                 key={m.nome}

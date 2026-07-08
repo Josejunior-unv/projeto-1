@@ -41,7 +41,7 @@ export default function QuestaoCard({
           )}
         </div>
         <span className="text-xs text-ink-500 font-semibold tabular-nums">
-          ENEM {questao.year}
+          {questao.origem || "ENEM"} {questao.year}
         </span>
       </div>
 

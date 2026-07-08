@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen,
+  GraduationCap,
   Newspaper,
   Users,
   ChevronUp,
@@ -27,6 +28,7 @@ import {
 import { enviarArquivo, formatarTamanho } from "./storageService";
 import GerenciarNoticias from "./GerenciarNoticias";
 import GerenciarUsuarios from "./GerenciarUsuarios";
+import GerenciarProvasUerj from "./GerenciarProvasUerj";
 import { usePersistedState } from "../hooks/usePersistedState";
 
 const formatarData = (iso) => {
@@ -237,6 +239,7 @@ export default function PainelAdmin() {
       <div className="inline-flex p-1 rounded-2xl bg-ink-900/60 border border-ink-800 mb-6">
         {[
           { id: "materiais", label: "Materiais", icone: BookOpen },
+          { id: "uerj", label: "Provas UERJ", icone: GraduationCap },
           { id: "noticias", label: "Notícias", icone: Newspaper },
           { id: "usuarios", label: "Usuários", icone: Users },
         ].map((s) => (
@@ -258,6 +261,8 @@ export default function PainelAdmin() {
       {secao === "noticias" && <GerenciarNoticias autor={professorNome} />}
 
       {secao === "usuarios" && <GerenciarUsuarios />}
+
+      {secao === "uerj" && <GerenciarProvasUerj />}
 
       {secao === "materiais" && (
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">

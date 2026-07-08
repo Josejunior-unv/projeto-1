@@ -77,6 +77,8 @@ export function estimarDificuldade(q) {
 
 // Nome amigável da matéria, usado no selo da questão e ao salvar estatísticas.
 export function nomeMateria(questao) {
+  // Questões da UERJ (e futuras fontes) já chegam com o nome resolvido.
+  if (questao.materiaNome) return questao.materiaNome;
   if (questao.language === "ingles") return "Inglês";
   if (questao.language === "espanhol") return "Espanhol";
 
