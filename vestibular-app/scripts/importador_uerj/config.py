@@ -40,8 +40,9 @@ TENTATIVAS_DOWNLOAD = 3
 TIMEOUT_HTTP = 40  # segundos
 
 # ------------------------------------------------------------- supabase
+# Mesmo projeto do app (src/SUPABASE.js).
 SUPABASE_URL = os.environ.get(
-    "SUPABASE_URL", "https://gvdlbfwqjpqpxlxlvbxu.supabase.co"
+    "SUPABASE_URL", "https://plyavsgrxdxfzhoidqwk.supabase.co"
 )
 # A service role key IGNORA RLS — use apenas neste pipeline, nunca no app.
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")

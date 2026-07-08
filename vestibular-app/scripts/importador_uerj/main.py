@@ -41,6 +41,24 @@ from classificar import chave_prova, classificar  # noqa: E402
 
 TIPOS_PROVA = {"qualificacao", "discursivo"}
 TIPOS_RESPOSTA = {"gabarito", "padrao_resposta"}
+ROTULO_FASE = {
+    "1EQ": "1º Exame de Qualificação",
+    "2EQ": "2º Exame de Qualificação",
+    "ED": "Exame Discursivo",
+}
+
+
+def titulo_da_prova(p):
+    """Título legível: 'UERJ 2026 · Exame Discursivo · Física'."""
+    partes = [f"UERJ {p.get('ano')}" if p.get("ano") else "UERJ"]
+    partes.append(ROTULO_FASE.get(p.get("fase"), p.get("tipo") or "Prova"))
+    if p.get("disciplina"):
+        partes.append(p["disciplina"])
+    if p.get("tipo") == "gabarito":
+        partes.append("Gabarito")
+    elif p.get("tipo") == "padrao_resposta":
+        partes.append("Padrão de respostas")
+    return " · ".join(partes)
 
 
 def configurar_logs(verbose):
@@ -98,6 +116,15 @@ def main():
         catalogo = [c for c in catalogo if c.get("ano") == args.ano]
         log.info("Filtro --ano %d: %d PDFs.", args.ano, len(catalogo))
 
+    # Só baixamos o que alimenta o banco: provas, gabaritos e padrões.
+    # Editais/manuais/comunicados ("outro") ficam fora.
+    total_bruto = len(catalogo)
+    catalogo = [c for c in catalogo if c.get("tipo") in TIPOS_PROVA | TIPOS_RESPOSTA]
+    log.info(
+        "%d PDFs relevantes (%d administrativos ignorados).",
+        len(catalogo), total_bruto - len(catalogo),
+    )
+
     # 2) DOWNLOAD ------------------------------------------------------
     with tqdm(total=len(catalogo), desc="Baixando PDFs", unit="pdf") as barra:
         manifesto = baixar_catalogo(catalogo, progresso=barra)
@@ -112,8 +139,12 @@ def main():
     log.info("%d PDFs de prova, %d de gabarito/padrão.", len(provas), len(gabaritos))
 
     # 3) GABARITOS (respostas por edição) -------------------------------
+    # Só PDFs de gabarito valem como fonte de respostas: os padrões de
+    # resposta são dissertativos e produziriam casamentos falsos.
     respostas_por_edicao = {}
     for g in tqdm(gabaritos, desc="Lendo gabaritos", unit="pdf"):
+        if g.get("tipo") != "gabarito":
+            continue
         mapa = extrair_gabarito(g)
         if mapa:
             respostas_por_edicao.setdefault(chave_prova(g), {}).update(mapa)
@@ -135,6 +166,11 @@ def main():
                 q["resposta"] = respostas[q["numero"]]
 
         resultado.append({"prova": prova, "questoes": questoes})
+
+    # Gabaritos e padrões de resposta também entram no acervo (sem questões):
+    # aparecem na Biblioteca UERJ para consulta dos alunos.
+    for g in gabaritos:
+        resultado.append({"prova": g, "questoes": []})
 
     salvar_extracao(resultado)
     total_q = sum(len(r["questoes"]) for r in resultado)
@@ -163,7 +199,7 @@ def main():
                 "tipo": p.get("tipo"),
                 "fase": p.get("fase"),
                 "disciplina": p.get("disciplina"),
-                "titulo": (p.get("texto") or Path(p["caminho_local"]).stem)[:200],
+                "titulo": titulo_da_prova(p),
                 "url_original": p["url"],
                 "pdf_url": url_pdf,
                 "storage_path": f"uerj/{destino}",

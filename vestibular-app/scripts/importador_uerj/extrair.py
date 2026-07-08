@@ -29,6 +29,31 @@ RE_GABARITO = re.compile(r"\b(\d{1,3})\s*[-–.)\s]\s*([A-E])\b")
 
 MIN_TEXTO_PAGINA = 30  # abaixo disso a página é tratada como "sem texto"
 
+# Linhas de cabeçalho/rodapé dos PDFs da UERJ que poluem o enunciado:
+# "Desenvolvimento e resposta:", "Matemática", "Vestibular Estadual 2026
+# Exame Discursivo", números de página soltos etc.
+RE_LINHA_RUIDO = re.compile(
+    r"^\s*("
+    r"desenvolvimento e resposta:?|"
+    r"rascunho|"
+    r"vestibular estadual\s*\d{0,4}.*|"
+    r"exame discursivo|exame de qualifica\S*|"
+    r"universidade do estado do rio de janeiro|"
+    r"matem[áa]tica|f[íi]sica|qu[íi]mica|biologia|hist[óo]ria|geografia|"
+    r"portugu[êe]s|l[íi]ngua portuguesa.*|reda[çc][ãa]o|ingl[êe]s|espanhol|"
+    r"filosofia|sociologia|"
+    r"\d{1,3}"
+    r")\s*$",
+    re.IGNORECASE,
+)
+
+
+def _limpar_enunciado(texto):
+    """Remove linhas de cabeçalho/rodapé sem tocar no conteúdo real."""
+    linhas = [l for l in texto.splitlines() if not RE_LINHA_RUIDO.match(l)]
+    limpo = "\n".join(linhas)
+    return re.sub(r"\n{3,}", "\n\n", limpo).strip()
+
 
 def _texto_pdfplumber(caminho, num_pagina):
     try:
@@ -136,7 +161,7 @@ def extrair_questoes(entrada_manifesto, prefixo_imagens):
 
         questoes.append({
             "numero": numero,
-            "enunciado": re.sub(r"[ \t]+", " ", enunciado).strip(),
+            "enunciado": re.sub(r"[ \t]+", " ", _limpar_enunciado(enunciado)).strip(),
             "alternativas": alternativas,
             "pagina": pag_ini,
             "imagens": imagens,
@@ -161,21 +186,51 @@ def extrair_questoes(entrada_manifesto, prefixo_imagens):
 
 
 def extrair_gabarito(entrada_manifesto):
-    """Extrai {numero: letra} de um PDF de gabarito (melhor esforço)."""
+    """Extrai {numero: letra} de um PDF de gabarito.
+
+    Os gabaritos da UERJ são TABELAS (números numa linha, letras logo
+    abaixo), então a estratégia principal é espacial: para cada número,
+    procura a letra A–E mais próxima abaixo dele. Se render pouca coisa
+    (layout diferente), cai para o regex linear "01 - B".
+    """
     caminho = entrada_manifesto["caminho_local"]
     try:
         doc = fitz.open(caminho)
-        texto = "\n".join(doc[n].get_text("text") or "" for n in range(doc.page_count))
-        doc.close()
     except Exception as erro:
         log.error("Não abriu gabarito %s: %s", caminho, erro)
         return {}
 
     respostas = {}
-    for m in RE_GABARITO.finditer(texto):
-        numero, letra = int(m.group(1)), m.group(2)
-        if 1 <= numero <= 120 and numero not in respostas:
-            respostas[numero] = letra
+    texto_completo = []
+    for pagina in doc:
+        texto_completo.append(pagina.get_text("text") or "")
+        palavras = pagina.get_text("words")  # (x0, y0, x1, y1, texto, ...)
+        numeros = [
+            ((w[0] + w[2]) / 2, w[3], int(w[4]))
+            for w in palavras
+            if re.fullmatch(r"\d{1,3}", w[4]) and 1 <= int(w[4]) <= 120
+        ]
+        letras = [
+            ((w[0] + w[2]) / 2, w[1], w[4].upper())
+            for w in palavras
+            if re.fullmatch(r"[A-Ea-e]", w[4])
+        ]
+        for nx, ny, n in numeros:
+            candidatas = [
+                (abs(lx - nx) + 0.3 * (ly - ny), letra)
+                for lx, ly, letra in letras
+                if 0 < ly - ny < 40 and abs(lx - nx) < 12
+            ]
+            if candidatas and n not in respostas:
+                respostas[n] = min(candidatas)[1]
+    doc.close()
+
+    if len(respostas) < 5:  # tabela não reconhecida -> tenta o formato linear
+        for m in RE_GABARITO.finditer("\n".join(texto_completo)):
+            numero, letra = int(m.group(1)), m.group(2)
+            if 1 <= numero <= 120 and numero not in respostas:
+                respostas[numero] = letra
+
     log.info("Gabarito %s -> %d respostas.", entrada_manifesto["url"], len(respostas))
     return respostas
 

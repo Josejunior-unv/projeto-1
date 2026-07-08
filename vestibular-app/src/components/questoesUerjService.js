@@ -46,7 +46,7 @@ export async function listarQuestoesUerj(disciplina) {
 export function adaptarParaCard(q) {
   return {
     index: q.numero,
-    year: q.prova?.ano,
+    year: q.prova?.ano > 0 ? q.prova.ano : "",
     origem: "UERJ",
     materiaNome: q.disciplina,
     context: q.enunciado,
