@@ -13,7 +13,9 @@ Uso típico (na pasta scripts/importador_uerj):
 
 import argparse
 import logging
+import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 # Usa o repositório de certificados do SISTEMA para validar TLS — o site da
@@ -45,6 +47,7 @@ ROTULO_FASE = {
     "1EQ": "1º Exame de Qualificação",
     "2EQ": "2º Exame de Qualificação",
     "ED": "Exame Discursivo",
+    "EU": "Exame Único",
 }
 
 
@@ -141,36 +144,142 @@ def main():
     # 3) GABARITOS (respostas por edição) -------------------------------
     # Só PDFs de gabarito valem como fonte de respostas: os padrões de
     # resposta são dissertativos e produziriam casamentos falsos.
+    # Retificações são processadas POR ÚLTIMO para prevalecerem sobre o
+    # gabarito original da mesma edição.
+    def eh_retificado(g):
+        return bool(re.search(r"retificad|alterad|corrigid|final",
+                              g["url"].rsplit("/", 1)[-1], re.IGNORECASE))
+
+    def pasta_url(url):
+        return url.rsplit("/", 1)[0]
+
     respostas_por_edicao = {}
-    for g in tqdm(gabaritos, desc="Lendo gabaritos", unit="pdf"):
-        if g.get("tipo") != "gabarito":
+    respostas_por_pasta = {}
+    so_gabaritos = sorted(
+        (g for g in gabaritos if g.get("tipo") == "gabarito"),
+        key=eh_retificado,
+    )
+    for g in tqdm(so_gabaritos, desc="Lendo gabaritos", unit="pdf"):
+        mapa, edicao = extrair_gabarito(g)
+        # Aceita o gabarito quando (a) o NOME do arquivo/anexo identifica a
+        # edição ("2015_1eq_gabarito.pdf") — convenção do próprio portal —
+        # ou (b) o conteúdo imprime "Vestibular Estadual". Os gabaritos de
+        # tabela antigos não imprimem nada, mas têm nome inequívoco.
+        if not (g.get("ano") and g.get("fase")) and not edicao["vestibular"]:
+            log.info("Gabarito de outro certame, ignorado: %s", g["url"])
+            g["tipo"] = "outro"  # também não entra no acervo de PDFs
             continue
-        mapa = extrair_gabarito(g)
-        if mapa:
-            respostas_por_edicao.setdefault(chave_prova(g), {}).update(mapa)
+        if not mapa:
+            continue
+        # Ano/fase: nome do arquivo/URL > conteúdo impresso no PDF.
+        if not g.get("ano") and edicao["ano"]:
+            g["ano"] = edicao["ano"]
+        if not g.get("fase") and edicao["fase"]:
+            g["fase"] = edicao["fase"]
+
+        # Pareamento extra pela PASTA do anexo: prova e gabarito da mesma
+        # edição moram no mesmo diretório (/anexos/223/...). Salva o caso
+        # dos anexos cujo número NÃO segue o padrão ano+fase.
+        pasta = respostas_por_pasta.setdefault(pasta_url(g["url"]), {})
+        pasta.update(mapa)
+
+        chave = chave_prova(g)
+        if chave[0] is None:
+            log.warning("Gabarito sem edição identificável: %s", g["url"])
+            continue
+        anterior = respostas_por_edicao.setdefault(chave, {})
+        conflitos = sum(
+            1 for n, letra in mapa.items() if anterior.get(n, letra) != letra
+        )
+        if conflitos and not eh_retificado(g):
+            log.warning(
+                "Gabaritos conflitantes para %s (%d divergências): %s",
+                chave, conflitos, g["url"],
+            )
+        anterior.update(mapa)
 
     # 4) EXTRAÇÃO + CLASSIFICAÇÃO ---------------------------------------
     resultado = []
     for prova in tqdm(provas, desc="Extraindo questões", unit="prova"):
         prefixo = f"{prova.get('ano') or 'x'}_{prova.get('fase') or 'geral'}_{prova['hash'][:8]}"
         try:
-            questoes = extrair_questoes(prova, prefixo)
+            questoes, edicao = extrair_questoes(prova, prefixo)
         except Exception as erro:
             log.error("Extração falhou em %s: %s", prova["url"], erro)
             continue
 
+        # PDFs de OUTROS certames hospedados no portal (CBMERJ, proficiência,
+        # mestrado, transferência) não imprimem "Vestibular Estadual": ficam
+        # fora do acervo por completo. PDFs escaneados (sem camada de texto)
+        # ganham o benefício da dúvida e entram só como PDF.
+        if edicao.get("tem_texto") and not edicao["vestibular"]:
+            log.warning("Não é prova do vestibular — excluída: %s", prova["url"])
+            prova["tipo"] = "outro"
+            continue
+
+        # Ano/fase que faltam na URL saem do próprio PDF ("Vestibular
+        # Estadual 2021 ... Exame Único").
+        if not prova.get("ano") and edicao["ano"]:
+            prova["ano"] = edicao["ano"]
+        if not prova.get("fase") and edicao["fase"]:
+            prova["fase"] = edicao["fase"]
+
+        # Falso positivo do padrão /anexos/AAE/: uma "discursiva" cujas
+        # questões têm alternativas é na verdade uma prova OBJETIVA — o
+        # conteúdo impresso decide a fase real.
+        com_alternativas = sum(1 for q in questoes if q.get("alternativas"))
+        if (
+            prova.get("tipo") == "discursivo"
+            and questoes
+            and com_alternativas > len(questoes) / 2
+        ):
+            prova["tipo"] = "qualificacao"
+            prova["fase"] = (
+                edicao["fase"] if edicao["fase"] and edicao["fase"] != "ED" else None
+            )
+            log.info(
+                "Reclassificada como objetiva pelo conteúdo: %s (fase=%s)",
+                prova["url"], prova["fase"],
+            )
+
         respostas = respostas_por_edicao.get(chave_prova(prova), {})
+        # Sem casamento por edição, tenta o gabarito publicado na MESMA
+        # pasta de anexos da prova.
+        if not respostas:
+            respostas = respostas_por_pasta.get(pasta_url(prova["url"]), {})
+        casadas = 0
+        # Questões de língua estrangeira NÃO recebem gabarito: os números
+        # 23–27 se repetem para cada idioma com respostas diferentes, e
+        # atribuir a coluna errada corrigiria o aluno com a resposta de
+        # outra língua. Melhor sem correção do que com correção errada.
+        repetidos = {
+            n for n, vezes in Counter(q["numero"] for q in questoes).items()
+            if vezes > 1
+        }
         for q in questoes:
             q.update(classificar(q, disciplina_sugerida=prova.get("disciplina")))
-            if q["numero"] in respostas and q.get("alternativas"):
+            if (
+                q["numero"] in respostas
+                and q.get("alternativas")
+                and not q.get("idioma")
+                and q["numero"] not in repetidos
+            ):
                 q["resposta"] = respostas[q["numero"]]
+                casadas += 1
+        if questoes and respostas and casadas == 0:
+            log.warning(
+                "%s: nenhum número casou com o gabarito da edição %s.",
+                prova["url"], chave_prova(prova),
+            )
 
         resultado.append({"prova": prova, "questoes": questoes})
 
     # Gabaritos e padrões de resposta também entram no acervo (sem questões):
-    # aparecem na Biblioteca UERJ para consulta dos alunos.
+    # aparecem na Biblioteca UERJ para consulta dos alunos. Os que foram
+    # marcados como de outro certame ficam fora.
     for g in gabaritos:
-        resultado.append({"prova": g, "questoes": []})
+        if g.get("tipo") in TIPOS_RESPOSTA:
+            resultado.append({"prova": g, "questoes": []})
 
     salvar_extracao(resultado)
     total_q = sum(len(r["questoes"]) for r in resultado)
@@ -225,6 +334,7 @@ def main():
                     "disciplina": q["disciplina"],
                     "assunto": q["assunto"],
                     "subassunto": q["subassunto"],
+                    "area": q.get("area"),
                     "dificuldade": q["dificuldade"],
                     "habilidades": q["habilidades"],
                     "imagens": urls_imagens,
@@ -232,11 +342,29 @@ def main():
                     "url_original": q["url_original"],
                     "classificada": q["classificada"],
                 })
-            publicadas += pub.upsert_questoes(linhas_q)
+            # Substituição total: apaga as questões antigas da prova e insere
+            # as novas — garante que reclassificações/correções de extração
+            # não deixem linhas obsoletas para trás.
+            publicadas += pub.substituir_questoes(linha["id"], linhas_q)
         except Exception as erro:
             log.error("Publicação falhou (%s): %s", p["url"], erro)
             pub.registrar_log("erro", "publicacao_falhou",
                               {"url": p["url"], "erro": str(erro)[:400]})
+
+    # 6) LIMPEZA — remove do banco provas que não pertencem mais ao acervo
+    # (concursos CBMERJ/proficiência, listagens etc. importados por engano).
+    # Só roda em execuções completas: com --ano/--limite o conjunto local é
+    # parcial e apagaria provas legítimas.
+    if not args.ano and not args.limite:
+        hashes_validos = {r["prova"]["hash"] for r in resultado}
+        try:
+            removidas = pub.excluir_provas_fora_de(hashes_validos)
+            if removidas:
+                log.info("Limpeza: %d provas obsoletas removidas do banco.", removidas)
+                pub.registrar_log("aviso", "provas_obsoletas_removidas",
+                                  {"quantidade": removidas})
+        except Exception as erro:
+            log.error("Limpeza de provas obsoletas falhou: %s", erro)
 
     pub.registrar_log("info", "importacao_concluida",
                       {"provas": len(resultado), "questoes_publicadas": publicadas})

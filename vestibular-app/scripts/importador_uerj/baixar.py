@@ -77,6 +77,21 @@ def baixar_catalogo(catalogo, progresso=None):
     Devolve a lista de itens enriquecidos com {hash, caminho_local, paginas}.
     """
     manifesto = carregar_manifesto()
+
+    # Arquivos já baixados são RECLASSIFICADOS com as regras mais recentes:
+    # as regras do crawler evoluem e o manifesto não pode congelar rótulos
+    # antigos (ex.: ano errado vindo da pasta de upload do WordPress, ou um
+    # concurso que hoje é reconhecido como "outro"). Reclassificar direto —
+    # em vez de copiar do catálogo — cobre também itens que o site não
+    # linka mais e itens que o filtro do main removeria do catálogo.
+    from crawler import classificar_item
+
+    for entrada in manifesto.values():
+        ano, tipo, fase, disciplina = classificar_item(
+            entrada.get("texto", ""), entrada["url"]
+        )
+        entrada.update(ano=ano, tipo=tipo, fase=fase, disciplina=disciplina)
+
     urls_conhecidas = {m["url"] for m in manifesto.values()}
     pendentes = [i for i in catalogo if i["url"] not in urls_conhecidas]
 

@@ -5,6 +5,7 @@ import {
   ArrowRight,
   FolderOpen,
   GraduationCap,
+  Landmark,
   Loader2,
 } from "lucide-react";
 import { MATERIAS, coresDe } from "../constants/materias";
@@ -14,7 +15,8 @@ import { CabecalhoPagina, EstadoVazio, Selo } from "./ui";
 import { cx } from "./ui/cx";
 
 const QuestoesEnem = lazy(() => import("./QuestoesEnem"));
-const QuestoesUerj = lazy(() => import("./QuestoesUerj"));
+const UerjHub = lazy(() => import("./uerj/UerjHub"));
+const BancoQuestoesUerj = lazy(() => import("./uerj/BancoQuestoesUerj"));
 
 // ------------------------------------------------------------
 // Hub da área de Questões: o banco oficial do ENEM em destaque
@@ -34,11 +36,14 @@ export default function QuestoesHub({ userId }) {
   // null = hub · "enem" = banco ENEM · nome de matéria = pasta aberta
   const [pasta, setPasta] = usePersistedState("questoes_pasta", null);
   const [contagens, setContagens] = useState({});
+  const [totalUerj, setTotalUerj] = useState(0);
 
   useEffect(() => {
     let ativo = true;
-    contarQuestoesPorDisciplina().then(({ contagens: c }) => {
-      if (ativo) setContagens(c);
+    contarQuestoesPorDisciplina().then(({ contagens: c, total: t }) => {
+      if (!ativo) return;
+      setContagens(c);
+      setTotalUerj(t);
     });
     return () => {
       ativo = false;
@@ -70,45 +75,27 @@ export default function QuestoesHub({ userId }) {
     );
   }
 
-  /* ---------- PASTA DE MATÉRIA (questões UERJ) ---------- */
-  if (pasta) {
-    const mat = MATERIAS.find((m) => m.nome === pasta);
-    const c = coresDe(mat?.cor);
-    const qtd = contagens[pasta] ?? 0;
+  /* ---------- CENTRAL UERJ ---------- */
+  if (pasta === "uerj") {
     return (
-      <div className="max-w-3xl">
-        <button
-          onClick={() => setPasta(null)}
-          className="inline-flex items-center gap-2 text-ink-400 hover:text-white text-sm font-semibold mb-6 transition-colors"
-        >
-          <ArrowLeft size={16} /> Todas as pastas
-        </button>
+      <Suspense fallback={<CarregandoInterno texto="Abrindo a Central UERJ..." />}>
+        <UerjHub userId={userId} onVoltar={() => setPasta(null)} />
+      </Suspense>
+    );
+  }
 
-        <div className="flex items-center gap-3.5 mb-6">
-          <span
-            className={cx(
-              "w-13 h-13 p-3 flex items-center justify-center rounded-2xl text-2xl border",
-              c.fundo,
-              c.borda,
-            )}
+  /* ---------- PASTA DE MATÉRIA (banco UERJ filtrado) ---------- */
+  if (pasta) {
+    const qtd = contagens[pasta] ?? 0;
+    if (qtd === 0) {
+      return (
+        <div className="max-w-3xl">
+          <button
+            onClick={() => setPasta(null)}
+            className="inline-flex items-center gap-2 text-ink-400 hover:text-white text-sm font-semibold mb-6 transition-colors"
           >
-            {mat?.icone ?? "📚"}
-          </span>
-          <div>
-            <h1 className="text-2xl font-black text-white tracking-tight font-display">
-              {pasta}
-            </h1>
-            <p className="text-xs text-ink-500 mt-0.5 tabular-nums">
-              {qtd} {qtd === 1 ? "questão da UERJ" : "questões da UERJ"}
-            </p>
-          </div>
-        </div>
-
-        {qtd > 0 ? (
-          <Suspense fallback={<CarregandoInterno texto="Abrindo as questões..." />}>
-            <QuestoesUerj disciplina={pasta} userId={userId} />
-          </Suspense>
-        ) : (
+            <ArrowLeft size={16} /> Todas as pastas
+          </button>
           <EstadoVazio
             icone={FolderOpen}
             titulo="Nenhuma questão adicionada ainda"
@@ -122,8 +109,17 @@ export default function QuestoesHub({ userId }) {
               </button>
             }
           />
-        )}
-      </div>
+        </div>
+      );
+    }
+    return (
+      <Suspense fallback={<CarregandoInterno texto="Abrindo as questões..." />}>
+        <BancoQuestoesUerj
+          userId={userId}
+          filtrosIniciais={{ disciplina: pasta }}
+          onVoltar={() => setPasta(null)}
+        />
+      </Suspense>
     );
   }
 
@@ -135,13 +131,56 @@ export default function QuestoesHub({ userId }) {
         descricao="Escolha uma pasta para treinar — o banco oficial do ENEM completo e as questões das provas da UERJ, organizadas por matéria."
       />
 
+      {/* DESTAQUE — Central UERJ */}
+      <motion.button
+        type="button"
+        onClick={() => setPasta("uerj")}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="group relative w-full text-left overflow-hidden p-6 sm:p-8 rounded-3xl mb-5
+                   bg-ink-900 border border-gold-400/40 shadow-[var(--shadow-card)]
+                   transition-all duration-300 hover:border-gold-400/70 hover:-translate-y-0.5"
+      >
+        <div
+          aria-hidden
+          className="absolute -top-16 -right-16 w-56 h-56 rounded-full opacity-[0.1] blur-3xl pointer-events-none transition-opacity duration-300 group-hover:opacity-[0.18]"
+          style={{
+            background:
+              "radial-gradient(circle, var(--color-gold-400) 0%, transparent 70%)",
+          }}
+        />
+        <div className="relative flex items-center gap-5 flex-wrap">
+          <span className="w-14 h-14 shrink-0 rounded-2xl bg-gold-400 text-ink-950 flex items-center justify-center shadow-[var(--shadow-gold)] transition-transform duration-300 group-hover:scale-105">
+            <Landmark size={26} strokeWidth={2} />
+          </span>
+          <div className="flex-1 min-w-[200px]">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="font-display text-xl font-black text-white tracking-tight">
+                Central UERJ
+              </h2>
+              <Selo variante="solido">
+                {totalUerj > 0 ? `${totalUerj} questões` : "Novo"}
+              </Selo>
+            </div>
+            <p className="text-sm text-ink-400 mt-1.5 max-w-lg">
+              Banco de questões interativo, provas completas para resolver
+              online, simulados personalizados e os PDFs oficiais.
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 text-sm font-bold text-gold-300 group-hover:gap-3 transition-all">
+            Abrir central <ArrowRight size={16} />
+          </span>
+        </div>
+      </motion.button>
+
       {/* DESTAQUE — banco ENEM */}
       <motion.button
         type="button"
         onClick={() => setPasta("enem")}
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
+        transition={{ delay: 0.08, duration: 0.4, ease: "easeOut" }}
         className="group relative w-full text-left overflow-hidden p-6 sm:p-8 rounded-3xl mb-10
                    bg-ink-900 border border-gold-400/25 shadow-[var(--shadow-card)]
                    transition-all duration-300 hover:border-gold-400/50 hover:-translate-y-0.5"

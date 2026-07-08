@@ -271,6 +271,142 @@ create policy "admin escreve logs uerj" on public.uerj_import_logs for insert to
   with check (exists (select 1 from public.profiles p
                       where p.user_id = auth.uid() and p.cargo = 'admin'));
 
+-- 8) BANCO DE QUESTÕES INTERATIVO DA UERJ — denúncias de erro, área do
+--    conhecimento, questões por idioma e índices.
+--    Alunos podem reportar erro de classificação/gabarito de uma questão;
+--    a denúncia entra em uerj_import_logs e aparece na aba Provas UERJ do
+--    Painel do Admin. O tamanho é limitado na própria política para conter
+--    abuso (o app já corta o motivo em 300 caracteres).
+drop policy if exists "aluno denuncia questao" on public.uerj_import_logs;
+create policy "aluno denuncia questao" on public.uerj_import_logs
+  for insert to authenticated
+  with check (
+    evento = 'denuncia_questao'
+    and nivel = 'aviso'
+    and pg_catalog.length(coalesce(detalhes::text, '')) < 2000
+  );
+
+-- Área do conhecimento impressa na própria prova (Linguagens, Matemática,
+-- Ciências da Natureza, Ciências Humanas) — preenchida pelo pipeline.
+alter table public.questoes_uerj
+  add column if not exists area text;
+
+-- As questões de língua estrangeira REPETEM os números (23–27 saem em
+-- inglês, espanhol e francês): a unicidade passa a incluir a disciplina.
+alter table public.questoes_uerj
+  drop constraint if exists questoes_uerj_prova_id_numero_key;
+create unique index if not exists questoes_uerj_prova_numero_disc_uidx
+  on public.questoes_uerj (prova_id, numero, coalesce(disciplina, ''));
+
+create index if not exists questoes_uerj_assunto_idx
+  on public.questoes_uerj (assunto);
+create index if not exists questoes_uerj_dificuldade_idx
+  on public.questoes_uerj (dificuldade);
+create index if not exists questoes_uerj_area_idx
+  on public.questoes_uerj (area);
+
+-- 9) SEGURANÇA — revisão de RLS (jul/2026). Fecha brechas reais:
+--    • materiais_estudo: a política antiga deixava QUALQUER aluno logado
+--      publicar/editar material visível para todos. Agora é só admin.
+--    • storage: qualquer autenticado podia subir E APAGAR qualquer PDF do
+--      bucket. Upload/exclusão agora são de admin; leitura continua pública.
+--    • profiles/cronogramas/questoes_respondidas: políticas pinadas por
+--      dono (as antigas, criadas fora deste arquivo, são todas removidas).
+
+-- 9a) materiais_estudo: escrita só de admin (professor), sempre como dono.
+drop policy if exists "materiais insert" on public.materiais_estudo;
+create policy "materiais insert" on public.materiais_estudo
+  for insert to authenticated
+  with check (
+    auth.uid() = usuario_id
+    and exists (select 1 from public.profiles p
+                where p.user_id = auth.uid() and p.cargo = 'admin')
+  );
+
+drop policy if exists "materiais update" on public.materiais_estudo;
+create policy "materiais update" on public.materiais_estudo
+  for update to authenticated
+  using (
+    auth.uid() = usuario_id
+    and exists (select 1 from public.profiles p
+                where p.user_id = auth.uid() and p.cargo = 'admin')
+  )
+  with check (auth.uid() = usuario_id);
+
+drop policy if exists "materiais delete" on public.materiais_estudo;
+create policy "materiais delete" on public.materiais_estudo
+  for delete to authenticated
+  using (
+    auth.uid() = usuario_id
+    and exists (select 1 from public.profiles p
+                where p.user_id = auth.uid() and p.cargo = 'admin')
+  );
+
+-- 9b) Storage: upload e exclusão só para admin. Leitura pública (os PDFs
+--     das provas são públicos por natureza).
+do $$ begin
+  drop policy if exists "upload materiais" on storage.objects;
+  create policy "upload materiais" on storage.objects for insert to authenticated
+    with check (
+      bucket_id = 'materiais'
+      and exists (select 1 from public.profiles p
+                  where p.user_id = auth.uid() and p.cargo = 'admin')
+    );
+
+  drop policy if exists "excluir materiais" on storage.objects;
+  create policy "excluir materiais" on storage.objects for delete to authenticated
+    using (
+      bucket_id = 'materiais'
+      and exists (select 1 from public.profiles p
+                  where p.user_id = auth.uid() and p.cargo = 'admin')
+    );
+exception when others then
+  raise notice 'Storage nao reconfigurado via SQL (ajuste as policies no painel): %', sqlerrm;
+end $$;
+
+-- 9c) profiles: cada um lê o PRÓPRIO cargo; ninguém escreve direto (a troca
+--     de cargo passa apenas pela RPC admin_definir_cargo, SECURITY DEFINER).
+--     Remove qualquer política antiga criada fora deste arquivo.
+alter table public.profiles enable row level security;
+do $$ declare pol record; begin
+  for pol in select policyname from pg_policies
+             where schemaname = 'public' and tablename = 'profiles' loop
+    execute format('drop policy %I on public.profiles', pol.policyname);
+  end loop;
+end $$;
+create policy "perfil proprio" on public.profiles
+  for select to authenticated using (auth.uid() = user_id);
+
+-- 9d) cronogramas: cada aluno gerencia apenas o seu.
+alter table public.cronogramas enable row level security;
+do $$ declare pol record; begin
+  for pol in select policyname from pg_policies
+             where schemaname = 'public' and tablename = 'cronogramas' loop
+    execute format('drop policy %I on public.cronogramas', pol.policyname);
+  end loop;
+end $$;
+create policy "cronograma proprio" on public.cronogramas
+  for all to authenticated
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- 9e) questoes_respondidas: o aluno registra e lê apenas as SUAS respostas;
+--     não há update/delete (histórico é só de acréscimo).
+alter table public.questoes_respondidas enable row level security;
+do $$ declare pol record; begin
+  for pol in select policyname from pg_policies
+             where schemaname = 'public' and tablename = 'questoes_respondidas' loop
+    execute format('drop policy %I on public.questoes_respondidas', pol.policyname);
+  end loop;
+end $$;
+create policy "respostas insert proprio" on public.questoes_respondidas
+  for insert to authenticated
+  with check (
+    auth.uid() = usuario_id
+    and char_length(coalesce(materia, '')) <= 80
+  );
+create policy "respostas select proprio" on public.questoes_respondidas
+  for select to authenticated using (auth.uid() = usuario_id);
+
 -- ============================================================================
 -- Verificação rápida (deve retornar as 4 linhas abaixo sem erro):
 select 'materiais_estudo.tipo' as ok

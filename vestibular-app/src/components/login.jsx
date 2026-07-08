@@ -260,6 +260,7 @@ function Login() {
                 rotulo="Nome"
                 type="text"
                 required
+                maxLength={80}
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
                 placeholder="Seu nome completo"

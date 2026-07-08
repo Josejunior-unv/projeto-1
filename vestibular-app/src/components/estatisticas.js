@@ -26,13 +26,21 @@ const chaveMes = (dt) => `${dt.getFullYear()}-${dt.getMonth()}`;
 export async function processarEstatisticas(userId) {
     if (!userId) return null;
 
-    const { data, error } = await supabase
-        .from('questoes_respondidas')
-        .select('acertou, data, materia')
-        .eq('usuario_id', userId)
-        .order('data', { ascending: true });
-
-    if (error || !data) return null;
+    // Coleta TUDO paginando de 1000 em 1000: o PostgREST limita cada
+    // resposta a 1000 linhas e truncaria em silêncio o histórico de um
+    // aluno assíduo.
+    const data = [];
+    for (let inicio = 0; ; inicio += 1000) {
+        const { data: pagina, error } = await supabase
+            .from('questoes_respondidas')
+            .select('acertou, data, materia')
+            .eq('usuario_id', userId)
+            .order('data', { ascending: true })
+            .range(inicio, inicio + 999);
+        if (error) return null;
+        data.push(...(pagina || []));
+        if (!pagina || pagina.length < 1000) break;
+    }
 
     const stats = {
         total: data.length,

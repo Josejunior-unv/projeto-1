@@ -43,19 +43,33 @@ python main.py --max-paginas 60     # crawl curto (teste)
 ```
 
 O pipeline é **idempotente e incremental**: PDFs já baixados são pulados via
-hash SHA-256 (manifesto local) e a publicação faz upsert (nada duplica).
-Rode de novo a qualquer momento para importar edições novas — o crawler
-descobre anos automaticamente, sem listas fixas.
+hash SHA-256 (manifesto local), arquivos já conhecidos são **reclassificados**
+com as regras mais novas a cada execução, e a publicação substitui as
+questões de cada prova por completo (nada duplica nem fica obsoleto). Em
+execuções completas (sem `--ano`/`--limite`) as provas que deixaram de
+pertencer ao acervo (concursos CBMERJ, proficiência etc.) são **removidas**
+do banco automaticamente.
 
 ## Etapas
 
 | Etapa | Módulo | O que faz |
 | --- | --- | --- |
-| Crawl | `crawler.py` | BFS no domínio, cataloga PDFs e deduz ano/tipo/fase/disciplina do contexto do link |
-| Download | `baixar.py` | paralelo, retry com backoff, valida `%PDF` + abertura no PyMuPDF, deduplica por SHA-256, organiza em `dados/downloads/<ano>/<tipo>/<fase>/` |
-| Extração | `extrair.py` | PyMuPDF → pdfplumber → OCR (opcional); segmenta `QUESTÃO NN`, separa alternativas `(A)...(D)`, exporta figuras, casa gabaritos |
-| Classificação | `classificar.py` | disciplina/assunto por palavras-chave, dificuldade estimada, habilidades; sem match ⇒ "Não Classificada" |
-| Publicação | `publicar.py` | Storage (`materiais/uerj/...`) + upsert em `provas_uerj`/`questoes_uerj` + logs em `uerj_import_logs` |
+| Crawl | `crawler.py` | BFS no domínio, cataloga PDFs; ano/fase vêm do padrão `/anexos/AAE/`, do NOME do arquivo (`2015_1eq_prova.pdf`) e só então do contexto — nunca da pasta de upload do WordPress (é a data de upload, não a da prova) |
+| Download | `baixar.py` | paralelo, retry com backoff, valida `%PDF` + abertura no PyMuPDF, deduplica por SHA-256, reclassifica o manifesto com as regras atuais |
+| Extração | `extrair.py` | blocos reordenados por coluna (layout 2-colunas da UERJ), rótulos de margem fundidos, área/idioma lidos do rodapé de cada página, banners "AS QUESTÕES X A Y..." reanexados, alternativas validadas em sequência estrita; PDFs que não imprimem "Vestibular Estadual" (outros certames) são excluídos |
+| Classificação | `classificar.py` | idioma da página > disciplina do PDF > palavras-chave ponderadas restritas à ÁREA impressa na página; sem confiança mínima ⇒ "Não Classificada" (com área preservada) |
+| Publicação | `publicar.py` | Storage (`materiais/uerj/...`) + upsert de provas por hash + **substituição total** das questões de cada prova + remoção de provas obsoletas + logs em `uerj_import_logs` |
+
+## Regras de correção importantes
+
+- **Questões de língua estrangeira (23–27) nunca recebem gabarito**: cada
+  idioma (inglês/espanhol/francês) tem respostas próprias no gabarito e
+  atribuir a coluna errada corrigiria o aluno com a resposta de outra
+  língua. Elas são importadas (uma versão por idioma), só não têm correção
+  automática.
+- **Gabaritos retificados** são aplicados por último e prevalecem.
+- **Provas 2012 (e outras com numeração vetorial, sem texto)** entram só
+  como PDF: numerar "no chute" arriscaria parear gabarito errado.
 
 ## Saídas locais
 
@@ -75,7 +89,9 @@ Sem OCR o pipeline apenas registra o aviso e segue.
 ## Correções manuais
 
 Classificações erradas e questões com extração imperfeita podem ser
-corrigidas na aba **Provas UERJ** do Painel do Admin — o pipeline nunca
-sobrescreve uma correção manual em execuções futuras, desde que o conteúdo
-do PDF não mude (o upsert é por `prova_id + numero`; campos editados no
-painel são atualizados apenas se você reprocessar o PDF).
+corrigidas na aba **Provas UERJ** do Painel do Admin. Atenção: a publicação
+faz **substituição total** das questões de cada prova — reprocessar e
+publicar de novo sobrescreve correções manuais feitas no painel (e troca os
+IDs das questões, zerando o progresso local dos alunos no banco UERJ).
+Prefira evoluir as regras do `classificar.py` e reimportar, usando o painel
+só para ajustes pontuais depois da importação final.

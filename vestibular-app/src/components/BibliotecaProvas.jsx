@@ -10,11 +10,14 @@ import {
   Sparkles,
   PencilRuler,
   ArrowUpDown,
+  Share2,
+  Check,
 } from "lucide-react";
 import { supabase } from "../SUPABASE";
 import { listarMateriais } from "./materiaisService";
 import { listarProvasUerj } from "./questoesUerjService";
 import { MATERIAS, coresDe } from "../constants/materias";
+import { AREAS_CONHECIMENTO, areaPorId } from "../constants/areasConhecimento";
 import { usePersistedState } from "../hooks/usePersistedState";
 import {
   Botao,
@@ -67,6 +70,38 @@ const ehProva = (item) =>
 
 const rotuloTipo = (id) =>
   TIPOS_PROVA.find((t) => t.id === id)?.label ?? "Prova";
+
+/* Compartilha o link do PDF (Web Share API, com cópia como fallback). */
+function BotaoCompartilhar({ titulo, url }) {
+  const [copiado, setCopiado] = useState(false);
+  async function compartilhar() {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: titulo, url });
+        return;
+      }
+      throw new Error("sem web share");
+    } catch {
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopiado(true);
+        setTimeout(() => setCopiado(false), 2000);
+      } catch {
+        // Sem clipboard: nada a fazer.
+      }
+    }
+  }
+  return (
+    <button
+      type="button"
+      onClick={compartilhar}
+      title={copiado ? "Link copiado!" : "Compartilhar"}
+      className="p-2 rounded-lg text-ink-500 hover:text-gold-300 hover:bg-white/[0.05] transition-colors active:scale-90"
+    >
+      {copiado ? <Check size={14} className="text-emerald-400" /> : <Share2 size={14} />}
+    </button>
+  );
+}
 
 /* Card individual de prova */
 function CartaoProva({ item, indice }) {
@@ -145,6 +180,7 @@ function CartaoProva({ item, indice }) {
             <Download size={14} /> Baixar
           </Botao>
         )}
+        <BotaoCompartilhar titulo={item.titulo} url={item.url_arquivo} />
       </div>
 
       {/* Espaço reservado: resolução online (futuro) */}
@@ -172,6 +208,7 @@ export default function BibliotecaProvas() {
     "todas",
   );
   const [tipoFiltro, setTipoFiltro] = usePersistedState("bib_tipo", "todos");
+  const [areaFiltro, setAreaFiltro] = usePersistedState("bib_area", "todas");
   const [ordenacao, setOrdenacao] = usePersistedState("bib_ordem", "ano-desc");
 
   const [provasImportadas, setProvasImportadas] = useState([]);
@@ -250,10 +287,13 @@ export default function BibliotecaProvas() {
 
   const filtradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
+    const area = areaFiltro !== "todas" ? areaPorId(areaFiltro) : null;
     const lista = provas.filter((i) => {
       if (anoFiltro !== "todos" && i.anoProva !== Number(anoFiltro)) return false;
       if (materiaFiltro !== "todas" && i.materia !== materiaFiltro) return false;
       if (tipoFiltro !== "todos" && i.tipoProva !== tipoFiltro) return false;
+      if (area && !(i.materia && area.disciplinas.includes(i.materia)))
+        return false;
       if (termo) {
         const alvo =
           `${i.titulo || ""} ${i.descricao || ""} ${i.materia || ""}`.toLowerCase();
@@ -270,7 +310,7 @@ export default function BibliotecaProvas() {
     return lista.sort(
       (a, b) => ((a.anoProva ?? 0) - (b.anoProva ?? 0)) * dir || porTitulo(a, b),
     );
-  }, [provas, busca, anoFiltro, materiaFiltro, tipoFiltro, ordenacao]);
+  }, [provas, busca, anoFiltro, materiaFiltro, tipoFiltro, areaFiltro, ordenacao]);
 
   // Prateleiras por ano (ordem acompanha a ordenação escolhida).
   const prateleiras = useMemo(() => {
@@ -287,13 +327,15 @@ export default function BibliotecaProvas() {
     busca.trim() !== "" ||
     anoFiltro !== "todos" ||
     materiaFiltro !== "todas" ||
-    tipoFiltro !== "todos";
+    tipoFiltro !== "todos" ||
+    areaFiltro !== "todas";
 
   const limparFiltros = () => {
     setBusca("");
     setAnoFiltro("todos");
     setMateriaFiltro("todas");
     setTipoFiltro("todos");
+    setAreaFiltro("todas");
   };
 
   return (
@@ -361,6 +403,20 @@ export default function BibliotecaProvas() {
             {anosDisponiveis.map((a) => (
               <option key={a} value={a}>
                 {a}
+              </option>
+            ))}
+          </CampoSelect>
+
+          <CampoSelect
+            value={areaFiltro}
+            onChange={(e) => setAreaFiltro(e.target.value)}
+            className="!w-auto py-2 text-xs"
+            aria-label="Filtrar por área do conhecimento"
+          >
+            <option value="todas">Todas as áreas</option>
+            {AREAS_CONHECIMENTO.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.nome}
               </option>
             ))}
           </CampoSelect>

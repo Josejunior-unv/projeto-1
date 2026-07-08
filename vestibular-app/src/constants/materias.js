@@ -13,6 +13,7 @@ export const MATERIAS = [
   { nome: "Sociologia", icone: "👥", cor: "rose" },
   { nome: "Inglês", icone: "🇬🇧", cor: "sky" },
   { nome: "Espanhol", icone: "🇪🇸", cor: "orange" },
+  { nome: "Francês", icone: "🇫🇷", cor: "violet" },
 ];
 
 // Tipos de conteúdo que o professor pode publicar.
@@ -110,6 +111,13 @@ export const CORES_MATERIA = {
     borda: "border-orange-500/20",
     hover: "hover:border-orange-300/60",
     anel: "ring-orange-500",
+  },
+  violet: {
+    texto: "text-violet-300",
+    fundo: "bg-violet-500/10",
+    borda: "border-violet-500/20",
+    hover: "hover:border-violet-300/60",
+    anel: "ring-violet-500",
   },
 };
 

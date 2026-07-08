@@ -16,18 +16,9 @@
       rel="stylesheet"
     />
     <title>UERJ Para Todos — Pré-Vestibular</title>
-    <script>
-      // Aplica o tema salvo ANTES do primeiro paint (evita flash).
-      (function () {
-        try {
-          var t = localStorage.getItem("tema");
-          document.documentElement.dataset.theme =
-            t === "light" ? "light" : "dark";
-        } catch (e) {
-          document.documentElement.dataset.theme = "dark";
-        }
-      })();
-    </script>
+    <!-- Tema salvo aplicado antes do 1º paint. Arquivo separado (não inline)
+         para a CSP não precisar de 'unsafe-inline' em script-src. -->
+    <script src="/tema.js"></script>
   </head>
   <body>
     <div id="root"></div>
