@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, Play, Loader2 } from "lucide-react";
 import { montarSimulado, opcoesDeFiltro } from "./uerjEstudoService";
 import ExecutorQuestoes from "./ExecutorQuestoes";
+import AvisoUerj from "./AvisoUerj.jsx";
 import { AREAS_CONHECIMENTO, areaPorId } from "../../constants/areasConhecimento";
 import { usePersistedState } from "../../hooks/usePersistedState";
 import { Botao, CampoSelect, Cartao, Alerta } from "../ui";
@@ -71,6 +72,8 @@ export default function SimuladoUerj({ userId, onVoltar }) {
           <ArrowLeft size={16} /> Voltar
         </button>
       )}
+
+      <AvisoUerj />
 
       <Cartao className="p-6">
         <h3 className="text-lg font-bold text-white mb-1">

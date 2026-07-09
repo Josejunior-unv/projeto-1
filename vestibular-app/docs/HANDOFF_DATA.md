@@ -68,6 +68,194 @@ resolve com certeza.
 
 ---
 
+## Auditoria PROFUNDA de qualidade (09/07/2026) — enunciados, alternativas, gabaritos, imagens, metadados
+
+Segunda varredura, agora além da classificação. Dump fresco (pós-Parte 12) +
+checagens automáticas de cada dimensão. **NENHUMA correção aplicada** nesta
+etapa (instrução: não deployar; rodar local e aguardar aprovação). Servidor
+local subido em `http://localhost:5173/` para teste manual.
+
+### O que está SÃO (verificado)
+- **Estrutura**: 0 mismatch área↔disciplina, 0 gabarito inválido (fora A–D),
+  0 discursiva com gabarito, 0 idioma com gabarito, **0 duplicatas**
+  (prova,numero,disciplina), 0 prova com ano fora de 2012–2027.
+- **Imagens que existem**: 607 questões têm imagem (1.275 refs em Storage
+  público), **0 URL quebrada** na amostra testada, **0 imagem duplicada** entre
+  questões. O pipeline extrai e sobe figuras raster corretamente.
+- **Provas de gabarito/padrão (50 registros, 0 questões)**: NÃO são lixo — o
+  `ProvasUerj.jsx` as consome como **anexos** (`acharAnexo(..., "gabarito"/
+  "padrao_resposta")`) para download, vinculadas à prova real. Correto.
+- **Degradação graciosa**: `QuestaoCard` avisa "enunciado não pôde ser extraído"
+  e "alternativa disponível só no PDF" — sem crash/erro de runtime.
+
+### Problemas encontrados — TODOS com a MESMA causa raiz (extração)
+| Problema | Qtd | Causa raiz |
+| --- | --- | --- |
+| Enunciado vazio | 68 | PDF vetorial/2012 (provas 109, 111) + páginas muito diagramadas → texto não extraível |
+| Objetiva sem alternativas | 9 | idem (layout quebrou a sequência A–E) |
+| Alguma alternativa com texto vazio | 34 | idem |
+| **Figura ausente** (menciona gráfico/tabela/mapa/charge mas `imagens=[]`) | **391** | `_exportar_imagens` só extrai raster embutido (`doc.extract_image(xref)`); **gráficos/tabelas/mapas VETORIAIS não são capturados** |
+| Objetiva não-idioma sem gabarito | 120 | matcher de gabarito por (ano,fase) não casou essas posições |
+
+União de defeitos de texto: **110 questões** distintas.
+
+### Diagnóstico técnico (causa raiz única)
+Todos os itens acima são limitação do **pipeline de extração** (`extrair.py`),
+não corrupção do banco. Especificamente:
+1. **Figuras vetoriais** (a maioria dos gráficos/tabelas/mapas da UERJ são
+   desenhos vetoriais, não imagens embutidas) não são capturadas — daí as 391
+   "figura ausente". Correção definitiva: renderizar a REGIÃO da figura da
+   página para raster (ex.: `page.get_pixmap(clip=bbox)`), não só `extract_image`.
+2. **Texto vetorial / layout denso** (2012 + páginas diagramadas) → 110 questões
+   com enunciado/alternativa faltando.
+3. **Matcher de gabarito** deixou 120 objetivas sem resposta.
+
+**Nenhum desses é corrigível por SQL sem inventar dado** (seria gambiarra
+proibida). A solução definitiva é **melhorar `extrair.py` + reimportar**
+(`python main.py` com service key) — o que troca IDs das questões e zera o
+progresso local do banco UERJ (`questoes_respondidas`/Estatísticas sobrevive).
+Reimportar é efetivamente um deploy de dados → **aguardando aprovação do dono**.
+
+### Próximos passos (aguardando aprovação)
+1. Melhorar `_exportar_imagens` (render de região vetorial) e a robustez de
+   texto/gabarito no `extrair.py`.
+2. Rodar `python main.py` (reimport completo) com service key.
+3. Re-auditar (as mesmas checagens) e confirmar queda dos 5 indicadores.
+4. Só então commit/push/deploy.
+
+### Prototipagem/validação de 09/07/2026 (o que aprendi antes de reimportar)
+Com aprovação, comecei a melhorar o extrator. Validei em PDFs em cache (699
+baixados; sem service key ainda — publicação é passo à parte). Conclusões:
+
+- **Render de figura vetorial FUNCIONA** (`page.get_pixmap(clip=bbox, dpi=150)`):
+  renderizei os 2 mapas da França (prova 252) e o triângulo de Matemática com
+  qualidade ótima. **Atribuição por banda ("Questão NN" → região)** é confiável.
+- **PORÉM a DETECÇÃO da bbox da figura é iterativa**: em 1 passe automático o
+  detector pegou ~7 de ~20 figuras da prova, perdeu a timeline "DIVISÃO DA
+  HISTÓRIA" (marcador "Questão"+número em blocos separados) e cortou o Mapa 2
+  (página frontal é COLUNA ÚNICA, o split de 2 colunas quebrou a figura). Ou
+  seja: chegar ao padrão "grande plataforma" exige ciclos detectar→renderizar→
+  conferir-visualmente→ajustar por arquétipo de figura (mapa, timeline, barras,
+  pirâmide, tabela, estrutura química, diagrama de física). **Não é passe único.**
+- **Gabarito — causa raiz achada e método validado**: o `extrair_gabarito`
+  descartava PDFs porque `inferir_edicao` só acha "Vestibular Estadual AAAA"
+  contíguo; nos gabaritos o ano fica solto. Reescrevi a leitura por
+  `_gabarito_por_sequencia` (layout "área→coluna de números→coluna de letras")
+  + edição pelo NOME do arquivo → **reproduzi 697 gabaritos conhecidos com 100%
+  de acerto, 0 divergência**. MAS ⚠️ o ano **nunca** pode vir do conteúdo (a
+  data de realização é do ano anterior: vi `2013_1eq`→2012, `2025`→prova de
+  09/06/2024). Cobertura do patch standalone: só recupera ~1/120 com segurança,
+  porque os faltantes estão em provas de nome numérico (`252_gabarito…`) que
+  precisam do mapeamento anexo→ano do pipeline. **Recuperar os 120 com segurança
+  = corrigir a resolução de edição no pipeline + reimport** (a extração em si já
+  é 100% confiável quando a edição está certa).
+
+### Execução das etapas A→C (09/07/2026, aprovado "vai fundo, só reimporta quando provado")
+
+**ETAPA A (gabaritos) — PROVADA ✅.** Simulei o estágio de gabarito do pipeline
+com os PDFs em cache (edição do manifesto/crawler + fallback por pasta +
+retificados por último = exatamente o `main.py`). Resultado:
+- **Validação: reproduz os 1.196 gabaritos conhecidos com 100%% de acerto, 0
+  divergência, 0 ausente.** Método confiável.
+- **Recupera 54 dos 120 faltantes** (validados). Os 66 restantes: gabarito extrai
+  parcial (2013: 29) ou é edição sem fonte confiável (2023 EU: 14, 2025 2EQ: 11).
+- A extração ATUAL já funciona — a produção foi publicada por versão mais fraca.
+  Logo o reimport aplicará os 54; ou pode-se aplicar o patch **Part 13**.
+- ⚠️ Regra de ouro confirmada: o ano do gabarito **nunca** vem do conteúdo (a data
+  de realização é do ano anterior). Sempre nome do arquivo / edição do crawler.
+
+**PARTE 13 — GERADA, VALIDADA E JÁ ANEXADA AO `supabase_migration.sql`
+(09/07/2026).** Deixou de ser patch solto: agora é a Parte 13 do arquivo (bloco
+após a Parte 12), com um gerador versionado `scripts/importador_uerj/gerar_part13.py`.
+- **Causa raiz confirmada** (linha ~168 do `main.py`): o gabarito-tabela antigo
+  `uploads/2019/06/Gabarito.pdf` (1º EQ 2020, prova 94) tem nome sem ano/fase e
+  conteúdo que NÃO imprime "Vestibular Estadual" → é descartado como "outro
+  certame" com `continue` **antes** da linha 183 que alimentaria o fallback por
+  pasta. Resultado: as 53 objetivas da prova 94 ficaram sem gabarito. Correção
+  definitiva no pipeline exigiria reimport (troca IDs, perde a Part 12); por isso
+  a recuperação foi feita **cirurgicamente por SQL**.
+- **`gerar_part13.py`** reproduz o casamento gabarito→prova do pipeline (edição +
+  pasta) **sem o descarte prematuro** e então: (1) VALIDA contra produção —
+  **reproduz os 1.196 gabaritos existentes com 0 divergência** (qualquer
+  divergência ABORTA a geração); (2) emite `update ... set resposta='X' where
+  id=N and resposta is null` só para objetivas não-idioma hoje sem gabarito, e só
+  de provas cuja validação ficou 100% limpa.
+- **Resultado: 53 UPDATEs, todos da prova 94** (nºs 1–21 e 29–60, faixa de idioma
+  23–27 excluída), distribuição de letras A=13/B=13/C=13/D=14 (balanceada = sinal
+  de gabarito genuíno e alinhado). A pasta `uploads/2019/06/` contém exatamente
+  1 prova + 1 gabarito (pareamento inequívoco). Os outros 66 nulls (2013 parcial,
+  2023 EU, 2025 2EQ) seguem sem fonte confiável → o gerador não inventa nada.
+- Idempotente/aditivo (`and resposta is null`). Regenerável: `python gerar_part13.py`.
+
+**ETAPA B (figuras) — detector salvo em `scripts/importador_uerj/figuras.py`,
+validado em layouts modernos; layouts antigos pendentes.**
+- Render (`get_pixmap(clip=bbox)`) é ótimo; atribuição por banda "Questão NN" é
+  sólida. Resolvi 3 casos: coluna inferida dos PRÓPRIOS marcadores (mata o
+  falso-positivo de 2 colunas na página frontal, que cortava figura no meio);
+  aceitar figura fina larga (timeline) além de área mínima; incluir rótulos-texto
+  curtos adjacentes no bbox.
+- ✅ **Validado por leitura visual (jul/2026)**: mapas da França (raster, 2
+  lado a lado + títulos + fontes), timeline "Divisão da História" (vetor fino +
+  todos os rótulos), triângulo de geometria — todos perfeitos. Prova 2025/2EQ:
+  **22 figuras** coerentes; prova 2013: 21.
+- ✅ **Layouts ANTIGOS (≤2020) RESOLVIDOS**: o rótulo era `questão\n01` em
+  MINÚSCULAS e o regex não tinha `IGNORECASE`. Com o fix, 2018: 0→24 figuras,
+  2016: 29, 2019: 30 (sem regressão nos modernos). Validei visualmente 2018 Q01
+  (imagem do Star Trek + moldura).
+- ✅ **Anti-ruído**: filtro que ignora a MOLDURA da questão (retângulo que
+  preenche a coluna) — exige raster OU ≥3 traços vetoriais. 2018 caiu 30→24.
+- ✅ **GANHO MEDIDO (casando por hash com a produção)**: **+195 questões que HOJE
+  não têm imagem ganhariam uma figura real** (spot-check visual: gráfico θ×Q de
+  Física, gráfico de linha de feminicídios, mapas, timeline — todos reais e bem
+  recortados). O "391" da heurística superestimava (menções a "observe"/"texto").
+- ✅ **Design ADITIVO (sem regressão)**: das 607 questões que já têm imagem, o
+  detector confirma 375 (com recorte melhor). As outras 232 continuam pela
+  extração raster atual (`_exportar_imagens`) como fallback → **nada se perde**.
+  Combinado ≈ 607 + 195 ≈ 802 questões com figura.
+- ✅ **INTEGRADO e VALIDADO ponta a ponta** (`extrair.py` chama `figuras.py`,
+  renderiza a região via `_render_figura`, com raster como fallback). Rodei
+  `python main.py --sem-crawl --sem-publicar` no corpo inteiro (108 provas, 1947
+  questões, exit 0). Re-auditoria do JSON gerado:
+  - **799 questões com figura** (era 607) = **+192 líquidas**; 704 são renders
+    de região (figuras vetoriais novas).
+  - **enunciado vazio 68→68, alternativa vazia 34→34 = ZERO regressão de texto.**
+- **ETAPA B = PRONTA para reimport.** Falta só publicar (service key + aprovação).
+
+**ETAPA C (texto/2012) — reescopada, BAIXO valor restante.** Os PDFs de 2012 TÊM
+texto (62 mil chars); o que falta são os NÚMEROS de questão (vetoriais) →
+`RE_QUESTAO` não segmenta. OCR de página não resolve limpo e o Tesseract nem
+está instalado. Sobre os 68 enunciados vazios: **todos os 68 têm alternativas
+(são respondíveis)**, 0 são inúteis (sem figura E sem alternativa), e 4 ganharam
+figura que mostra o conteúdo. Com o aviso gracioso do `QuestaoCard` ("enunciado
+não pôde ser extraído — veja o PDF"), o ganho de corrigi-los é pequeno e exige
+trabalho caso a caso de extração. **Deixado como está** (baixa prioridade).
+
+### ENTREGA PRONTA (cirúrgica, sem reimport) — aguarda service key + aprovação
+Tudo que NÃO precisa da service key está feito e validado local:
+- **`publicar_figuras.py`** (novo, no repo): sobe os PNGs e faz PATCH só em
+  `imagens`, casando extração→produção por (hash, número, idioma). Dry-run:
+  **1947 casadas, 0 sem match, 192 GANHAM figura, 0 perderiam** (aditivo).
+  Preserva IDs, Part 12, Part 13 e progresso local.
+- **Part 13** (53 gabaritos da prova 94) — **já anexada ao `supabase_migration.sql`**
+  (não é mais patch solto), com gerador versionado `gerar_part13.py`. Validada
+  (1.196 gabaritos existentes reproduzidos, 0 divergência).
+- Para publicar: rodar a Parte 13 no SQL Editor (ou recolar o migration inteiro,
+  idempotente) + `SUPABASE_SERVICE_ROLE_KEY=... python publicar_figuras.py
+  --publicar` para as figuras. Ambos cirúrgicos, sem reimport.
+- ⚠️ NÃO fazer `python main.py` completo: trocaria IDs e perderia a Part 12/13.
+
+### Recomendação técnica (honesta)
+Os 2 maiores problemas (391 figuras, 120 gabaritos) só se resolvem BEM com
+melhoria do pipeline + **um** reimport (que troca IDs e zera progresso local do
+banco UERJ). Fazer um reimport agora, com o extrator de figuras meio pronto,
+gastaria esse custo único num resultado incompleto/inconsistente (figura
+cortada é pior que figura ausente; gabarito errado é pior que ausente). Plano
+correto = trabalho ITERATIVO no `extrair.py` com QA visual, validar em várias
+provas, e só então o reimport único. **Nenhuma alteração aplicada; app rodando
+em localhost:5173 para teste manual; aguardando decisão do dono sobre o ritmo.**
+
+---
+
 ## Mapa do lado de dados
 
 ### Tabelas (Postgres / Supabase)
@@ -156,6 +344,13 @@ Supabase. Partes:
     cadernos (prova_id 7/67/390) viram Linguagens/Português; 11b erros pontuais
     de área cruzada por ID; 11c Humanas rotulado como Natureza nos Exames Únicos
     2022/2023.
+12. **Auditoria completa de classificação** (09/07): 115 `UPDATE`s validados
+    (reclassificações de fronteira + Não Classificada lidas + correções de área +
+    espanhol sem gabarito). Gerada pela varredura das 1.947 questões.
+13. **Recuperação de gabaritos** (09/07): 53 `UPDATE`s de `resposta` para a prova
+    94 (1º EQ 2020), gerados por `scripts/importador_uerj/gerar_part13.py` e
+    validados (reproduz 1.196 gabaritos existentes, 0 divergência). Idempotente
+    (`and resposta is null`).
 
 Verificação final: um `select` que confirma colunas/tabelas.
 
@@ -223,25 +418,34 @@ Enquanto não confirmado, tratar como pendência de segurança aberta.
    dono rodou `update public.questoes_uerj set resposta = null where id = 7986;`
    no SQL Editor. A questão agora está como Espanhol sem gabarito (correto).
 
-2. **Rodar a Parte 12** (auditoria de classificação) no SQL Editor — são 115
-   `UPDATE`s idempotentes já validados (simulação → 0 mismatch, cada filtro só
-   com sua área). Recolar o `supabase_migration.sql` inteiro (idempotente) OU
-   só o bloco "PARTE 12". Depois de rodar, o banco fica com "Não Classificada"
-   caindo de 284 para ~181 e as 6 reclassificações de fronteira corrigidas.
+2. **Rodar as Partes 12 e 13** no SQL Editor — recolar o `supabase_migration.sql`
+   inteiro (idempotente) OU só os blocos "PARTE 12" e "PARTE 13".
+   - **Parte 12** (auditoria de classificação): 115 `UPDATE`s validados (0
+     mismatch). "Não Classificada" cai de 284 para ~181 + 6 reclassificações de
+     fronteira.
+   - **Parte 13** (gabaritos): 53 `UPDATE`s validados (reproduz 1.196 gabaritos
+     existentes com 0 divergência). Recupera o gabarito da prova 94 (1º EQ 2020),
+     que o pipeline descartava. Objetivas não-idioma sem gabarito: 120 → 67.
 
-3. **Rotacionar a service role key** exposta no chat de 08/07/2026:
+3. **Publicar as figuras** (opcional, cirúrgico, sem reimport): com a service key,
+   `SUPABASE_SERVICE_ROLE_KEY=... python scripts/importador_uerj/publicar_figuras.py
+   --publicar`. Dry-run confirmado: 192 questões ganham figura, 0 perdem. Requer
+   `questoes_extraidas.json` no cache (já presente). Aditivo, preserva IDs/Part 12/13.
+
+4. **Rotacionar a service role key** exposta no chat de 08/07/2026:
    Supabase → Settings → API → Reset `service_role` key. Atualizar o
    `$env:SUPABASE_SERVICE_ROLE_KEY` do ambiente do pipeline. **Confirmar nesta
    ou na próxima sessão se já foi feito.**
 
-4. **(Opcional, só melhora residual)** Reimportar o acervo (`python main.py`
+5. **(Opcional, só melhora residual)** Reimportar o acervo (`python main.py`
    com service key) para resolver as 64 questões sem enunciado, 34 com
    alternativas vazias e a classificação fina dos Exames Únicos — as regras já
    estão corrigidas na origem. ⚠️ Reimportar troca os IDs das questões e zera o
    progresso local do banco UERJ (o `questoes_respondidas`/Estatísticas
-   permanece).
+   permanece). Substitui as Partes 12/13 pela extração — só vale quando o extrator
+   estiver 100% (figuras + gabaritos + classificação na origem).
 
-5. **(Higiene)** As contas de teste E2E `auditoria.claude.*@exemplo-teste.com`
+6. **(Higiene)** As contas de teste E2E `auditoria.claude.*@exemplo-teste.com`
    podem ser apagadas no painel do Supabase quando não forem mais usadas.
 
 ---

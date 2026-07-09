@@ -15,6 +15,7 @@ import {
   questoesDaProva,
 } from "./uerjEstudoService";
 import ExecutorQuestoes from "./ExecutorQuestoes";
+import AvisoUerj from "./AvisoUerj.jsx";
 import { Botao, Selo, EstadoVazio, Esqueleto, Alerta } from "../ui";
 
 // Área "Provas Completas": cada edição da UERJ com Resolver Online,
@@ -86,6 +87,8 @@ export default function ProvasUerj({ userId, onVoltar }) {
           <ArrowLeft size={16} /> Voltar
         </button>
       )}
+
+      <AvisoUerj />
 
       {aviso && (
         <Alerta variante="aviso" className="mb-4">

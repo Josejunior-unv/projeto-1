@@ -16,6 +16,7 @@ import {
   Timer,
 } from "lucide-react";
 import QuestaoCard from "../questoes/QuestaoCard.jsx";
+import AvisoUerj from "./AvisoUerj.jsx";
 import { adaptarParaCard } from "../questoesUerjService";
 import { registrarRespostaEnem } from "../estatisticas.js";
 import {
@@ -437,6 +438,8 @@ export default function BancoQuestoesUerj({
           <ArrowLeft size={16} /> Voltar
         </button>
       )}
+
+      <AvisoUerj />
 
       {/* FILTROS */}
       <div className="p-4 rounded-2xl bg-ink-900 border border-white/[0.08] shadow-[var(--shadow-card)] mb-6 space-y-3">

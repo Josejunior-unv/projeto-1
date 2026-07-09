@@ -34,8 +34,13 @@ import re
 import fitz  # PyMuPDF
 
 from config import ARQ_EXTRACAO, DIR_IMAGENS
+from figuras import figuras_da_pagina
 
 log = logging.getLogger("extrair")
+
+# DPI do render das figuras vetoriais (gráficos/tabelas/mapas). 150 dá boa
+# leitura sem estourar o tamanho do arquivo.
+DPI_FIGURA = 150
 
 RE_QUESTAO = re.compile(r"(?:^|\n)\s*QUEST[ÃA]O\s+(\d{1,3})\b", re.IGNORECASE)
 RE_ALTERNATIVA = re.compile(r"\(([A-E])\)\s*")
@@ -276,6 +281,22 @@ def _exportar_imagens(doc, num_pagina, prefixo):
     return caminhos
 
 
+def _render_figura(pagina, bbox, nome):
+    """Renderiza a REGIÃO de uma figura (vetor+raster) para PNG. Devolve o
+    caminho, ou None se falhar. É o que captura gráficos/tabelas/mapas que o
+    `_exportar_imagens` (só raster embutido) não pegava."""
+    try:
+        pix = pagina.get_pixmap(clip=bbox, dpi=DPI_FIGURA)
+        if pix.width < 20 or pix.height < 20:
+            return None
+        destino = DIR_IMAGENS / f"{nome}.png"
+        pix.save(str(destino))
+        return str(destino)
+    except Exception as erro:
+        log.debug("Render de figura falhou (%s): %s", nome, erro)
+        return None
+
+
 def _dividir_alternativas(corpo):
     """Separa enunciado e alternativas (A)-(E) do corpo de uma questão.
 
@@ -339,6 +360,10 @@ def extrair_questoes(entrada_manifesto, prefixo_imagens):
     def pagina_do_indice(idx):
         return completo.count(MARCA, 0, idx) + 1
 
+    # Figuras (gráficos/tabelas/mapas vetoriais) por página, atribuídas por
+    # banda "Questão NN". Pré-calculadas uma vez para reuso no loop.
+    figuras_por_pagina = [figuras_da_pagina(doc[n]) for n in range(doc.page_count)]
+
     ocorrencias = list(RE_QUESTAO.finditer(completo))
     questoes = []
     pendente_proxima = ""  # banner deslocado p/ a questão seguinte
@@ -374,9 +399,22 @@ def extrair_questoes(entrada_manifesto, prefixo_imagens):
         pag_fim = pagina_do_indice(fim - 1)
         area, idioma = areas[pag_ini - 1] if pag_ini - 1 < len(areas) else (None, None)
 
+        # Imagens da questão: PRIMEIRO a figura renderizada da região (pega
+        # vetor+raster com rótulos); se nenhuma banda casou o número, cai para
+        # o raster embutido (`_exportar_imagens`) — assim nada que já existia
+        # se perde e ganham-se os gráficos/tabelas/mapas vetoriais.
         imagens = []
         for p in range(pag_ini - 1, min(pag_fim, doc.page_count)):
-            imagens += _exportar_imagens(doc, p, f"{prefixo_imagens}_q{numero}")
+            bbox = figuras_por_pagina[p].get(numero)
+            if bbox is not None:
+                caminho = _render_figura(
+                    doc[p], bbox, f"{prefixo_imagens}_q{numero}_p{p + 1}"
+                )
+                if caminho:
+                    imagens.append(caminho)
+        if not imagens:
+            for p in range(pag_ini - 1, min(pag_fim, doc.page_count)):
+                imagens += _exportar_imagens(doc, p, f"{prefixo_imagens}_q{numero}")
 
         questoes.append({
             "numero": numero,

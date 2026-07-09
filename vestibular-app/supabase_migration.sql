@@ -656,3 +656,69 @@ update public.questoes_uerj set disciplina='Geografia', area='Ciências Humanas'
 update public.questoes_uerj set disciplina='Geografia', area='Ciências Humanas', assunto='Geopolítica', classificada=true where id = 8021; -- mapa Afeganistão/identidade nacional — rodapé geografia
 update public.questoes_uerj set disciplina='História', area='Ciências Humanas', assunto='História Geral', classificada=true where id = 8025; -- plebiscito Chile 2020/heranças autoritárias — rodapé história
 update public.questoes_uerj set disciplina='História', area='Ciências Humanas', assunto='História do Brasil', classificada=true where id = 8027; -- JK/Plano de Metas/rodovias — rodapé história
+
+-- ==========================================================================
+-- PARTE 13 — Recuperação de gabaritos de objetivas (gerada por gerar_part13.py)
+-- --------------------------------------------------------------------------
+-- Gabaritos-tabela antigos (nome sem ano/fase, conteúdo sem "Vestibular
+-- Estadual") eram descartados pelo pipeline antes do fallback por pasta, e
+-- a prova da mesma pasta ficava sem gabarito. Aqui a recuperação é cirúrgica
+-- (sem reimport, preserva IDs e a Part 12). Cada letra foi VALIDADA: o mesmo
+-- casamento reproduz 100% dos gabaritos que produção já tinha, 0 divergência.
+-- Idempotente e aditivo: `and resposta is null` nunca sobrescreve.
+-- Nenhuma questão de idioma entra aqui (idioma nunca tem gabarito).
+-- Total: 53 questões.
+-- ==========================================================================
+update public.questoes_uerj set resposta = 'D' where id = 6877 and resposta is null; -- prova 94 nº1 Biologia
+update public.questoes_uerj set resposta = 'A' where id = 6878 and resposta is null; -- prova 94 nº2 Português
+update public.questoes_uerj set resposta = 'D' where id = 6879 and resposta is null; -- prova 94 nº3 Biologia
+update public.questoes_uerj set resposta = 'B' where id = 6880 and resposta is null; -- prova 94 nº4 Português
+update public.questoes_uerj set resposta = 'B' where id = 6881 and resposta is null; -- prova 94 nº5 Matemática
+update public.questoes_uerj set resposta = 'C' where id = 6882 and resposta is null; -- prova 94 nº6 Física
+update public.questoes_uerj set resposta = 'C' where id = 6883 and resposta is null; -- prova 94 nº7 Química
+update public.questoes_uerj set resposta = 'D' where id = 6884 and resposta is null; -- prova 94 nº8 Física
+update public.questoes_uerj set resposta = 'A' where id = 6885 and resposta is null; -- prova 94 nº9 Matemática
+update public.questoes_uerj set resposta = 'A' where id = 6886 and resposta is null; -- prova 94 nº10 Português
+update public.questoes_uerj set resposta = 'D' where id = 6887 and resposta is null; -- prova 94 nº11 Português
+update public.questoes_uerj set resposta = 'C' where id = 6888 and resposta is null; -- prova 94 nº12 Português
+update public.questoes_uerj set resposta = 'A' where id = 6889 and resposta is null; -- prova 94 nº13 Português
+update public.questoes_uerj set resposta = 'B' where id = 6890 and resposta is null; -- prova 94 nº14 Português
+update public.questoes_uerj set resposta = 'A' where id = 6891 and resposta is null; -- prova 94 nº15 Português
+update public.questoes_uerj set resposta = 'B' where id = 6892 and resposta is null; -- prova 94 nº16 Português
+update public.questoes_uerj set resposta = 'D' where id = 6893 and resposta is null; -- prova 94 nº17 Português
+update public.questoes_uerj set resposta = 'A' where id = 6894 and resposta is null; -- prova 94 nº18 Português
+update public.questoes_uerj set resposta = 'D' where id = 6895 and resposta is null; -- prova 94 nº19 Português
+update public.questoes_uerj set resposta = 'C' where id = 6896 and resposta is null; -- prova 94 nº20 Português
+update public.questoes_uerj set resposta = 'B' where id = 6897 and resposta is null; -- prova 94 nº21 Português
+update public.questoes_uerj set resposta = 'C' where id = 6915 and resposta is null; -- prova 94 nº29 Matemática
+update public.questoes_uerj set resposta = 'D' where id = 6916 and resposta is null; -- prova 94 nº30 Matemática
+update public.questoes_uerj set resposta = 'C' where id = 6917 and resposta is null; -- prova 94 nº31 Matemática
+update public.questoes_uerj set resposta = 'D' where id = 6918 and resposta is null; -- prova 94 nº32 Matemática
+update public.questoes_uerj set resposta = 'A' where id = 6919 and resposta is null; -- prova 94 nº33 Matemática
+update public.questoes_uerj set resposta = 'B' where id = 6920 and resposta is null; -- prova 94 nº34 Matemática
+update public.questoes_uerj set resposta = 'B' where id = 6921 and resposta is null; -- prova 94 nº35 Biologia
+update public.questoes_uerj set resposta = 'A' where id = 6922 and resposta is null; -- prova 94 nº36 Biologia
+update public.questoes_uerj set resposta = 'A' where id = 6923 and resposta is null; -- prova 94 nº37 Biologia
+update public.questoes_uerj set resposta = 'A' where id = 6924 and resposta is null; -- prova 94 nº38 Física
+update public.questoes_uerj set resposta = 'C' where id = 6925 and resposta is null; -- prova 94 nº39 Química
+update public.questoes_uerj set resposta = 'B' where id = 6926 and resposta is null; -- prova 94 nº40 Química
+update public.questoes_uerj set resposta = 'D' where id = 6927 and resposta is null; -- prova 94 nº41 Biologia
+update public.questoes_uerj set resposta = 'D' where id = 6928 and resposta is null; -- prova 94 nº42 Física
+update public.questoes_uerj set resposta = 'D' where id = 6929 and resposta is null; -- prova 94 nº43 Biologia
+update public.questoes_uerj set resposta = 'B' where id = 6930 and resposta is null; -- prova 94 nº44 Química
+update public.questoes_uerj set resposta = 'C' where id = 6931 and resposta is null; -- prova 94 nº45 Biologia
+update public.questoes_uerj set resposta = 'C' where id = 6932 and resposta is null; -- prova 94 nº46 Física
+update public.questoes_uerj set resposta = 'A' where id = 6933 and resposta is null; -- prova 94 nº47 Não Classificada
+update public.questoes_uerj set resposta = 'C' where id = 6934 and resposta is null; -- prova 94 nº48 Não Classificada
+update public.questoes_uerj set resposta = 'B' where id = 6935 and resposta is null; -- prova 94 nº49 Não Classificada
+update public.questoes_uerj set resposta = 'B' where id = 6936 and resposta is null; -- prova 94 nº50 Não Classificada
+update public.questoes_uerj set resposta = 'B' where id = 6937 and resposta is null; -- prova 94 nº51 Geografia
+update public.questoes_uerj set resposta = 'B' where id = 6938 and resposta is null; -- prova 94 nº52 Não Classificada
+update public.questoes_uerj set resposta = 'D' where id = 6939 and resposta is null; -- prova 94 nº53 História
+update public.questoes_uerj set resposta = 'C' where id = 6940 and resposta is null; -- prova 94 nº54 Filosofia
+update public.questoes_uerj set resposta = 'C' where id = 6941 and resposta is null; -- prova 94 nº55 Filosofia
+update public.questoes_uerj set resposta = 'A' where id = 6942 and resposta is null; -- prova 94 nº56 Filosofia
+update public.questoes_uerj set resposta = 'C' where id = 6943 and resposta is null; -- prova 94 nº57 História
+update public.questoes_uerj set resposta = 'A' where id = 6944 and resposta is null; -- prova 94 nº58 Geografia
+update public.questoes_uerj set resposta = 'D' where id = 6945 and resposta is null; -- prova 94 nº59 Não Classificada
+update public.questoes_uerj set resposta = 'D' where id = 6946 and resposta is null; -- prova 94 nº60 Não Classificada

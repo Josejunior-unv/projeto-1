@@ -18,6 +18,7 @@ import ProvasUerj from "./ProvasUerj";
 import SimuladoUerj from "./SimuladoUerj";
 import EstatisticasUerj from "./EstatisticasUerj";
 import { resumoEstudo } from "./uerjEstudoService";
+import AvisoUerj from "./AvisoUerj.jsx";
 import { usePersistedState } from "../../hooks/usePersistedState";
 import { Indicador } from "../ui";
 import { cx } from "../ui/cx";
@@ -109,6 +110,8 @@ export default function UerjHub({ userId, onVoltar, disciplinaInicial = null }) 
           PDFs oficiais sempre disponíveis.
         </p>
       </div>
+
+      <AvisoUerj />
 
       {/* RESUMO DO ALUNO */}
       {resumo.respondidas > 0 && (
