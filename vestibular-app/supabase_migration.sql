@@ -494,8 +494,12 @@ update public.questoes_uerj
  where id in (6713, 6323, 6504, 6763);
 
 --      7986: "habla de la mujer del coronel" (García Márquez, espanhol) → Espanhol
+--      resposta=null porque a 10a roda antes desta reclassificação — o gabarito
+--      que ela carregava foi casado sob a disciplina errada (regra: idiomas
+--      nunca têm gabarito, a coluna oficial é por língua).
 update public.questoes_uerj
-   set disciplina = 'Espanhol', area = 'Linguagens', classificada = true
+   set disciplina = 'Espanhol', area = 'Linguagens', classificada = true,
+       resposta = null
  where id = 7986;
 
 -- 11c) Conteúdo de Ciências Humanas rotulado como Natureza nos Exames Únicos
@@ -527,3 +531,128 @@ union all select 'tabela noticias' from information_schema.tables
   where table_name = 'noticias'
 union all select 'tabelas provas/questoes uerj' from information_schema.tables
   where table_name = 'questoes_uerj';
+
+
+-- ====================================================================
+-- PARTE 12 — Auditoria completa de classificação (gerada 09/07/2026)
+-- 115 correções de alta confiança validadas por leitura questão a questão.
+-- Idempotente: UPDATE por id. Reclassifica questões de fronteira de bloco
+-- mal rotuladas + classifica 'Não Classificada' de Natureza/Matemática/idiomas.
+-- NÃO altera as 154 questões de Ciências Humanas objetivas (estrutura
+-- oficial da UERJ é por ÁREA; subdisciplina seria inferência de baixa confiança).
+-- ====================================================================
+update public.questoes_uerj set disciplina='Matemática', area='Matemática', assunto='Álgebra', classificada=true where id = 6116; -- conjunto de Cantor/fractal (sequência)
+update public.questoes_uerj set disciplina='Geografia', area='Ciências Humanas', assunto='Geopolítica', classificada=true where id = 6118; -- Estado-nação/Estados plurinacionais
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Eletricidade', classificada=true where id = 6155; -- resistores em série/tensão-corrente — física, estava Matemática (nº35)
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Botânica', classificada=true where id = 6160; -- musgos briófitas/gametas flagelados
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Mecânica', classificada=true where id = 6268; -- encontro de trens/distância (cinemática)
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Geral', classificada=true where id = 6273; -- fórmula óxido de arsênio As2O3 (alternativas)
+update public.questoes_uerj set disciplina='Matemática', area='Matemática', assunto='Álgebra', classificada=true where id = 6325; -- juros do cartão/matemática financeira
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Mecânica', classificada=true where id = 6366; -- corredores movimento uniforme/distância
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Ecologia', classificada=true where id = 6368; -- bioluminescência/vaga-lumes (comportamento)
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Geral', classificada=true where id = 6370; -- apatita Ca3(PO4)2/ânion fosfato
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Geral', classificada=true where id = 6371; -- urânio-235/plutônio-239/nêutrons (estrutura atômica)
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Mecânica', classificada=true where id = 6372; -- potência média = energia/tempo das bombas
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Zoologia', classificada=true where id = 6373; -- anelídeos oligoquetos/líquido celomático
+update public.questoes_uerj set disciplina='Português', area='Linguagens', assunto='Interpretação de Texto', classificada=true where id = 6392; -- funções da linguagem (argumentar)
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Óptica e Ondas', classificada=true where id = 6393; -- câmara escura/óptica geométrica
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Geral', classificada=true where id = 6394; -- iodeto de prata/redução Ag+ (fórmula)
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Mecânica', classificada=true where id = 6435; -- energia cinética dos carneiros (joules)
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Eletricidade', classificada=true where id = 6445; -- esferas condutoras/cargas elétricas/contato
+update public.questoes_uerj set disciplina='Não Classificada', area='Ciências Humanas', assunto='Não Classificado', classificada=false where id = 6447; -- cobertura universal de saúde/liberalismo — rodapé Ciências Humanas; área errada
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Geral', classificada=true where id = 6545; -- mendelévio/símbolo Md — conteúdo 100% química, estava como Matemática (fronteira de bloco nº35)
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Físico-Química', classificada=true where id = 6556; -- NaCl/solubilidade/mols (solução saturada)
+update public.questoes_uerj set disciplina='Não Classificada', area='Ciências Humanas', assunto='Não Classificado', classificada=false where id = 6557; -- Nelson Sargento/Mangueira/cultura afro-brasileira — rodapé Ciências Humanas; área errada
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Mecânica', classificada=true where id = 6621; -- relatividade/dilatação do tempo
+update public.questoes_uerj set disciplina='Português', area='Linguagens', assunto='Gramática', classificada=true where id = 6622; -- conectivo/coesão (no entanto)
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Geral', classificada=true where id = 6663; -- xenônio/camada de valência — química, estava Matemática (nº35)
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Eletricidade', classificada=true where id = 6665; -- lâmpada LED/potência/energia elétrica
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Ecologia', classificada=true where id = 6711; -- níveis tróficos (cadeia alimentar)
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Citologia e Genética', classificada=true where id = 6758; -- tipos celulares (melanócitos/astrócitos)
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Fisiologia', classificada=true where id = 6858; -- doping sanguíneo/eritrócitos
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Estequiometria', classificada=true where id = 6860; -- balanceamento KI+O3+H2SO4 (coeficientes)
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Físico-Química', classificada=true where id = 6862; -- equilíbrio químico/pressão/deslocamento
+update public.questoes_uerj set disciplina='Matemática', area='Matemática', assunto='Álgebra', classificada=true where id = 6881; -- desperdício de água/aritmética
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Geral', classificada=true where id = 6926; -- mendelévio/número de átomos (mol)
+update public.questoes_uerj set disciplina='Não Classificada', area='Ciências Humanas', assunto='Não Classificado', classificada=false where id = 6933; -- comércio justo/indústria da moda — Humanas; área errada
+update public.questoes_uerj set disciplina='Português', area='Linguagens', assunto='Interpretação de Texto', classificada=true where id = 6947; -- estratégia argumentativa (autoridade)
+update public.questoes_uerj set disciplina='Matemática', area='Matemática', assunto='Probabilidade e Estatística', classificada=true where id = 6948; -- razão mortes/casos (proporção)
+update public.questoes_uerj set disciplina='Português', area='Linguagens', assunto='Gramática', classificada=true where id = 6954; -- marca verbal/futuro do pretérito
+update public.questoes_uerj set disciplina='Português', area='Linguagens', assunto='Interpretação de Texto', classificada=true where id = 6955; -- interlocução com o leitor (pergunta)
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Geral', classificada=true where id = 6992; -- gases/substância composta (CO2)
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Mecânica', classificada=true where id = 6995; -- engrenagens/período/frequência
+update public.questoes_uerj set disciplina='Geografia', area='Ciências Humanas', assunto='Geografia Humana', classificada=true where id = 7003; -- favela da Maré/processo urbano — rodapé Ciências Humanas; área errada
+update public.questoes_uerj set disciplina='Matemática', area='Matemática', assunto='Geometria', classificada=true where id = 7021; -- teorema de Pitágoras/tripla pitagórica
+update public.questoes_uerj set disciplina='Matemática', area='Matemática', assunto='Geometria', classificada=true where id = 7022; -- simetria/mediatriz
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Mecânica', classificada=true where id = 7023; -- colisão inelástica/momento linear
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Ecologia', classificada=true where id = 7063; -- líquens/rocha nua/sucessão ecológica
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Termologia', classificada=true where id = 7064; -- mudança de estado físico/vaporização
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Geral', classificada=true where id = 7065; -- NaCl/função química (sal)
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Eletricidade', classificada=true where id = 7069; -- transformador/espiras primário-secundário
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Evolução e Microbiologia', classificada=true where id = 7070; -- dispersão de sementes/vantagem evolutiva
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Fisiologia', classificada=true where id = 7136; -- gestação/saco vitelínico (embriologia)
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Orgânica', classificada=true where id = 7138; -- ácido 3-metilbutanoico/fórmula estrutural
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Mecânica', classificada=true where id = 7139; -- força resultante/trajetória curva
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Estequiometria', classificada=true where id = 7141; -- vidro borossilicato/óxido básico/massa
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Geral', classificada=true where id = 7196; -- identificação de metal por propriedades químicas
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Mecânica', classificada=true where id = 7206; -- equilíbrio de régua com moedas (torque)
+update public.questoes_uerj set disciplina='Não Classificada', area='Ciências Humanas', assunto='Não Classificado', classificada=false where id = 7208; -- Hugh Glass/conquista do Oeste — Humanas; área errada (subdisciplina ambígua)
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Geral', classificada=true where id = 7229; -- carbono-14/número de mols
+update public.questoes_uerj set disciplina='Matemática', area='Matemática', assunto='Álgebra', classificada=true where id = 7230; -- escala linear/proporção
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Termologia', classificada=true where id = 7269; -- pressão do gás x raio do balão
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Botânica', classificada=true where id = 7270; -- raízes de mangue/fixação
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Geral', classificada=true where id = 7271; -- ácidos de Arrhenius/H2SO4
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Fisiologia', classificada=true where id = 7273; -- capilares/troca de substâncias
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Orgânica', classificada=true where id = 7274; -- benzopireno/razão C:H
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Mecânica', classificada=true where id = 7330; -- deslocamento do peixe por densidade (hidrostática)
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Mecânica', classificada=true where id = 7332; -- variação de pressão sobre o peixe (atm)
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Geral', classificada=true where id = 7338; -- energia de ionização de novos elementos
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Evolução e Microbiologia', classificada=true where id = 7339; -- evolução de primatas/musculatura
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Termologia', classificada=true where id = 7340; -- calor latente de fusão (cal/g)
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Estequiometria', classificada=true where id = 7341; -- dissolução/recuperação de ouro (massa)
+update public.questoes_uerj set disciplina='Geografia', area='Ciências Humanas', assunto='Geografia Humana', classificada=true where id = 7345; -- cartograma de religiões/anamorfose — rodapé Ciências Humanas
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Geral', classificada=true where id = 7407; -- razão com número de Avogadro (6e23)
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Fisiologia', classificada=true where id = 7414; -- transporte de O2 no plasma sanguíneo
+update public.questoes_uerj set disciplina='Geografia', area='Ciências Humanas', assunto='Geografia Humana', classificada=true where id = 7415; -- Ponte Rio-Niterói/conexão de rodovias — rodapé ciências humanas
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Orgânica', classificada=true where id = 7481; -- álcoois/centro quiral/solubilidade
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Físico-Química', classificada=true where id = 7484; -- decomposição do NaHCO3/CO2 x temperatura
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Fisiologia', classificada=true where id = 7545; -- salinidade/estresse osmótico em peixes
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Físico-Química', classificada=true where id = 7546; -- concentração de NaCl/massa a adicionar
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Termologia', classificada=true where id = 7553; -- gás/tanque de mergulho/pressão (Boyle)
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Mecânica', classificada=true where id = 7607; -- forças sobre bola de ferro/projétil
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Orgânica', classificada=true where id = 7612; -- guanina oxidada/átomo X (O)
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Físico-Química', classificada=true where id = 7614; -- curvas de solubilidade/massa de soluto
+update public.questoes_uerj set disciplina='Geografia', area='Ciências Humanas', assunto='Geografia Humana', classificada=true where id = 7618; -- Zona Portuária do Rio/urbanização — Humanas
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Ecologia', classificada=true where id = 7671; -- corredor florestal/deriva gênica — biologia, estava Matemática (nº30)
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Fisiologia', classificada=true where id = 7673; -- glicogênio x gorduras (bioquímica/hidrólise)
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Mecânica', classificada=true where id = 7679; -- colisão inelástica/quantidade de movimento
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Estequiometria', classificada=true where id = 7680; -- decomposição do carbonato de cálcio/entalpia
+update public.questoes_uerj set disciplina='Não Classificada', area='Ciências Humanas', assunto='Não Classificado', classificada=false where id = 7685; -- modelo produtivo fordista/pós-fordista — Humanas, estava Biologia (nº45, fronteira). Subdisciplina ambígua → NC/Humanas
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Físico-Química', classificada=true where id = 7735; -- neutralização ácido-base/concentração
+update public.questoes_uerj set disciplina='Matemática', area='Matemática', assunto='Probabilidade e Estatística', classificada=true where id = 7739; -- combinatória com baralho (quadra)
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Mecânica', classificada=true where id = 7742; -- lançamento oblíquo/alcance
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Termologia', classificada=true where id = 7749; -- calor específico/capacidade térmica/massa
+update public.questoes_uerj set disciplina='Matemática', area='Matemática', assunto='Geometria', classificada=true where id = 7751; -- área do círculo de contato entre bolhas
+update public.questoes_uerj set disciplina='Matemática', area='Matemática', assunto='Probabilidade e Estatística', classificada=true where id = 7807; -- lógica de palpites (contagem)
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Eletricidade', classificada=true where id = 7808; -- lâmpadas em paralelo/potência dissipada
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Orgânica', classificada=true where id = 7811; -- aminofenóis/isomeria
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Mecânica', classificada=true where id = 7814; -- queda de esferas/velocidade
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Ecologia', classificada=true where id = 7818; -- eutrofização de lago
+update public.questoes_uerj set disciplina='História', area='Ciências Humanas', assunto='História Geral', classificada=true where id = 7825; -- Tintim no Congo/colonização — rodapé Ciências Humanas
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Orgânica', classificada=true where id = 7881; -- nanotubo de carbono/ligações duplas
+update public.questoes_uerj set disciplina='Física', area='Ciências da Natureza', assunto='Mecânica', classificada=true where id = 7894; -- ferramenta/alavanca/menor força (torque)
+update public.questoes_uerj set disciplina='Não Classificada', area='Ciências Humanas', assunto='Não Classificado', classificada=false where id = 7895; -- Congresso das Raças/branqueamento — Humanas; área errada (subdisciplina ambígua)
+update public.questoes_uerj set disciplina='Espanhol', area='Linguagens', assunto='Leitura e Interpretação', classificada=true, resposta=null where id = 7921; -- texto em espanhol
+update public.questoes_uerj set disciplina='Espanhol', area='Linguagens', assunto='Leitura e Interpretação', classificada=true, resposta=null where id = 7923; -- texto em espanhol
+update public.questoes_uerj set disciplina='Espanhol', area='Linguagens', assunto='Leitura e Interpretação', classificada=true, resposta=null where id = 7925; -- texto em espanhol
+update public.questoes_uerj set disciplina='Geografia', area='Ciências Humanas', assunto='Geografia Humana', classificada=true where id = 7956; -- estratégia locacional/modelo produtivo — rodapé GEOGRAFIA
+update public.questoes_uerj set disciplina='Espanhol', area='Linguagens', assunto='Leitura e Interpretação', classificada=true, resposta=null where id = 7983; -- texto em espanhol (García Márquez)
+update public.questoes_uerj set disciplina='Espanhol', area='Linguagens', assunto='Leitura e Interpretação', classificada=true, resposta=null where id = 7984; -- texto em espanhol (pronome le)
+update public.questoes_uerj set disciplina='Espanhol', area='Linguagens', assunto='Leitura e Interpretação', classificada=true, resposta=null where id = 7985; -- texto em espanhol (expressão verbal)
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Fisiologia', classificada=true where id = 7994; -- mitocôndria/fosforilação oxidativa — biologia, estava Matemática (EU nº26)
+update public.questoes_uerj set disciplina='Biologia', area='Ciências da Natureza', assunto='Fisiologia', classificada=true where id = 7998; -- aquecimento global/fisiologia de peixes
+update public.questoes_uerj set disciplina='Química', area='Ciências da Natureza', assunto='Química Geral', classificada=true where id = 8008; -- reações de decomposição (CaCO3)
+update public.questoes_uerj set disciplina='Geografia', area='Ciências Humanas', assunto='Geopolítica', classificada=true where id = 8018; -- mapa muçulmanos/Império árabe — rodapé geografia
+update public.questoes_uerj set disciplina='Geografia', area='Ciências Humanas', assunto='Geopolítica', classificada=true where id = 8021; -- mapa Afeganistão/identidade nacional — rodapé geografia
+update public.questoes_uerj set disciplina='História', area='Ciências Humanas', assunto='História Geral', classificada=true where id = 8025; -- plebiscito Chile 2020/heranças autoritárias — rodapé história
+update public.questoes_uerj set disciplina='História', area='Ciências Humanas', assunto='História do Brasil', classificada=true where id = 8027; -- JK/Plano de Metas/rodovias — rodapé história
