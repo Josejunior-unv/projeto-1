@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -315,26 +315,31 @@ export default function BancoQuestoesUerj({
   const [itens, setItens] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [aberta, setAberta] = useState(null); // {questao, posicao}
-  const buscaRef = useRef(busca);
 
   useEffect(() => {
     opcoesDeFiltro().then(setOpcoes);
   }, []);
 
-  // Etapa 1: ids filtrados (busca com debounce).
+  // Etapa 1: ids filtrados (busca com debounce). O flag `ativo` invalida a
+  // resposta de QUALQUER execução superada (filtro OU busca trocados) — um
+  // guard só pela busca deixava a resposta antiga, mais lenta, sobrescrever
+  // a lista quando o usuário trocava dois filtros em sequência.
   useEffect(() => {
-    buscaRef.current = busca;
+    let ativo = true;
     const t = setTimeout(
       () => {
         buscarIdsFiltrados({ ...filtros, busca, userId }).then(({ ids: novos }) => {
-          if (buscaRef.current !== busca) return;
+          if (!ativo) return;
           setIds(novos);
           setPagina(0);
         });
       },
       busca ? 350 : 0,
     );
-    return () => clearTimeout(t);
+    return () => {
+      ativo = false;
+      clearTimeout(t);
+    };
   }, [filtros, busca, userId]);
 
   // Etapa 2: detalhes da página visível. A lista anterior permanece na
@@ -386,6 +391,12 @@ export default function BancoQuestoesUerj({
     ? [...(opcoes.assuntosPorDisciplina?.[filtros.disciplina] || [])].sort()
     : opcoes.assuntos;
 
+  // Progresso local: recarrega só quando pode ter mudado (voltar de uma
+  // questão respondida), não a cada tecla digitada na busca — o JSON.parse
+  // do estudo inteiro a cada render ficava caro com muitas respostas salvas.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const estudo = useMemo(() => carregarEstudo(userId), [userId, aberta]);
+
   // Navegação dentro da lista filtrada a partir da página da questão.
   const abrirPosicao = useCallback(
     async (posicao) => {
@@ -414,7 +425,6 @@ export default function BancoQuestoesUerj({
     );
   }
 
-  const estudo = carregarEstudo(userId);
   const totalPaginas = Math.max(1, Math.ceil(ids.length / POR_PAGINA));
 
   return (

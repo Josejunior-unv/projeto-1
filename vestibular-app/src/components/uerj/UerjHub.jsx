@@ -65,7 +65,10 @@ export default function UerjHub({ userId, onVoltar, disciplinaInicial = null }) 
   const [filtrosBanco, setFiltrosBanco] = useState(
     disciplinaInicial ? { disciplina: disciplinaInicial } : null,
   );
-  const resumo = useMemo(() => resumoEstudo(userId), [userId]);
+  // Recalcula ao voltar de uma seção — o aluno acabou de responder questões
+  // e o resumo (respondidas, taxa, sequência) precisa refletir isso.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const resumo = useMemo(() => resumoEstudo(userId), [userId, secao, filtrosBanco]);
 
   const voltarAoHub = () => {
     setSecao(null);

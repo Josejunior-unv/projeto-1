@@ -35,7 +35,7 @@ const CarregandoInterno = ({ texto }) => (
 export default function QuestoesHub({ userId }) {
   // null = hub · "enem" = banco ENEM · nome de matéria = pasta aberta
   const [pasta, setPasta] = usePersistedState("questoes_pasta", null);
-  const [contagens, setContagens] = useState({});
+  const [contagens, setContagens] = useState(null); // null = ainda carregando
   const [totalUerj, setTotalUerj] = useState(0);
 
   useEffect(() => {
@@ -86,6 +86,11 @@ export default function QuestoesHub({ userId }) {
 
   /* ---------- PASTA DE MATÉRIA (banco UERJ filtrado) ---------- */
   if (pasta) {
+    // Contagens ainda em voo (ex.: recarregou a página com a pasta salva):
+    // mostra o loading em vez de um falso "nenhuma questão adicionada".
+    if (contagens === null) {
+      return <CarregandoInterno texto="Abrindo as questões..." />;
+    }
     const qtd = contagens[pasta] ?? 0;
     if (qtd === 0) {
       return (
@@ -223,7 +228,7 @@ export default function QuestoesHub({ userId }) {
         <AnimatePresence initial={false}>
           {MATERIAS.map((m, i) => {
             const c = coresDe(m.cor);
-            const qtd = contagens[m.nome] ?? 0;
+            const qtd = contagens?.[m.nome] ?? 0;
             return (
               <motion.button
                 key={m.nome}

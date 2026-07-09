@@ -15,7 +15,7 @@ import {
   questoesDaProva,
 } from "./uerjEstudoService";
 import ExecutorQuestoes from "./ExecutorQuestoes";
-import { Botao, Selo, EstadoVazio, Esqueleto } from "../ui";
+import { Botao, Selo, EstadoVazio, Esqueleto, Alerta } from "../ui";
 
 // Área "Provas Completas": cada edição da UERJ com Resolver Online,
 // Baixar PDF, Gabarito e Padrão de Resposta.
@@ -26,6 +26,14 @@ export default function ProvasUerj({ userId, onVoltar }) {
   const [carregando, setCarregando] = useState(true);
   const [executando, setExecutando] = useState(null); // {titulo, questoes}
   const [abrindoId, setAbrindoId] = useState(null);
+  const [aviso, setAviso] = useState(null); // feedback quando não há questões respondíveis
+
+  // Some com o aviso sozinho depois de alguns segundos.
+  useEffect(() => {
+    if (!aviso) return;
+    const t = setTimeout(() => setAviso(null), 6000);
+    return () => clearTimeout(t);
+  }, [aviso]);
 
   useEffect(() => {
     let ativo = true;
@@ -46,7 +54,13 @@ export default function ProvasUerj({ userId, onVoltar }) {
     setAbrindoId(null);
     const respondiveis = data.filter((q) => (q.alternativas || []).length > 0);
     if (respondiveis.length > 0) {
+      setAviso(null);
       setExecutando({ titulo: prova.titulo, questoes: respondiveis });
+    } else {
+      setAviso(
+        `"${prova.titulo}" ainda não tem questões prontas para resolver online. ` +
+          "Use o PDF e o gabarito abaixo enquanto a equipe finaliza a importação.",
+      );
     }
   }
 
@@ -71,6 +85,12 @@ export default function ProvasUerj({ userId, onVoltar }) {
         >
           <ArrowLeft size={16} /> Voltar
         </button>
+      )}
+
+      {aviso && (
+        <Alerta variante="aviso" className="mb-4">
+          {aviso}
+        </Alerta>
       )}
 
       {carregando ? (
